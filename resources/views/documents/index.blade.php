@@ -150,7 +150,7 @@
                         <tr class="hover:bg-gray-50">
                             <td class="px-3 py-4">
                                 <div class="flex items-center">
-                                    <div class="mr-2">{!! $document->file_icon !!}</div>
+                                    <div class="mr-2">{!! $document->getFileIconAttribute() ?? '<svg class="w-8 h-8 text-gray-500" fill="currentColor" viewBox="0 0 20 20"><path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"/></svg>' !!}</div>
                                     <div class="min-w-0 flex-1">
                                         <div class="text-sm font-medium text-gray-900 truncate">{{ $document->title }}</div>
                                         <div class="text-xs text-gray-500 truncate">{{ $document->file_name }}</div>
@@ -158,15 +158,15 @@
                                 </div>
                             </td>
                             <td class="px-3 py-4">
-                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {{ $document->category_badge }}">
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {{ $document->category_badge ?? 'bg-gray-100 text-gray-800' }}">
                                     {{ ucfirst(str_replace('_', ' ', $document->category)) }}
                                 </span>
                             </td>
                             <td class="px-3 py-4 text-sm text-gray-900">
-                                {{ $document->file_size_formatted }}
+                                {{ $document->getFileSizeFormattedAttribute() ?? '0 B' }}
                             </td>
                             <td class="px-3 py-4">
-                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {{ $document->status_badge }}">
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {{ $document->status_badge ?? 'bg-gray-100 text-gray-800' }}">
                                     {{ ucfirst($document->status) }}
                                 </span>
                             </td>

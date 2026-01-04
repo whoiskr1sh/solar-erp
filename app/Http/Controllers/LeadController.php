@@ -37,7 +37,8 @@ class LeadController extends Controller
         }
 
         // Base query used for both list and stats
-        $baseQuery = Lead::with(['assignedUser', 'creator'])
+        // Eager-load latest quotations so we can show quotation info per lead without N+1 queries
+        $baseQuery = Lead::with(['assignedUser', 'creator', 'latestQuotations'])
             // Exclude reassigned leads - they should only appear in the Reassigned Leads section
             ->where('is_reassigned', false);
 
@@ -215,7 +216,7 @@ class LeadController extends Controller
             'address' => 'nullable|string',
             'city' => 'nullable|string|max:100',
             'state' => 'nullable|string|max:100',
-            'pincode' => 'required|string|regex:/^[0-9]{6}$/',
+            'pincode' => 'nullable|string|regex:/^[0-9]{6}$/',
             'source' => 'required|in:website,indiamart,justdial,meta_ads,referral,cold_call,other',
             'status' => 'required|in:interested,not_interested,partially_interested,not_reachable,not_answered',
             'lead_stage' => 'nullable|in:quotation_sent,site_survey_done,solar_documents_collected,loan_documents_collected',
@@ -422,7 +423,7 @@ class LeadController extends Controller
             'address' => 'nullable|string',
             'city' => 'nullable|string|max:100',
             'state' => 'nullable|string|max:100',
-            'pincode' => 'required|string|regex:/^[0-9]{6}$/',
+            'pincode' => 'nullable|string|regex:/^[0-9]{6}$/',
             'source' => 'required|in:website,indiamart,justdial,meta_ads,referral,cold_call,other',
             'status' => 'required|in:interested,not_interested,partially_interested,not_reachable,not_answered',
             'lead_stage' => 'nullable|in:quotation_sent,site_survey_done,solar_documents_collected,loan_documents_collected',

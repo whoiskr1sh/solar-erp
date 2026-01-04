@@ -157,7 +157,7 @@ class QuotationController extends Controller
 
     public function show(Quotation $quotation)
     {
-        $quotation->load(['client', 'project', 'creator', 'parentQuotation', 'revisions']);
+        $quotation->load(['client', 'project', 'creator', 'revisions']);
         
         // Get all revisions (including original and all revisions)
         $allRevisions = $quotation->allRevisions();

@@ -632,15 +632,6 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/quality-checks/{qualityCheck}/edit', [ProjectSubModuleController::class, 'editQualityCheck'])->name('quality-checks.edit');
         Route::put('/quality-checks/{qualityCheck}', [ProjectSubModuleController::class, 'updateQualityCheck'])->name('quality-checks.update');
         Route::delete('/quality-checks/{qualityCheck}', [ProjectSubModuleController::class, 'deleteQualityCheck'])->name('quality-checks.delete');
-        
-        // Documents
-        Route::get('/documents', [ProjectSubModuleController::class, 'documents'])->name('documents.index');
-        Route::get('/documents/create', [ProjectSubModuleController::class, 'createDocument'])->name('documents.create');
-        Route::post('/documents', [ProjectSubModuleController::class, 'storeDocument'])->name('documents.store');
-        Route::get('/documents/{document}', [ProjectSubModuleController::class, 'showDocument'])->name('documents.show');
-        Route::get('/documents/{document}/edit', [ProjectSubModuleController::class, 'editDocument'])->name('documents.edit');
-        Route::put('/documents/{document}', [ProjectSubModuleController::class, 'updateDocument'])->name('documents.update');
-        Route::delete('/documents/{document}', [ProjectSubModuleController::class, 'deleteDocument'])->name('documents.delete');
     });
 
 // Material Consumption routes

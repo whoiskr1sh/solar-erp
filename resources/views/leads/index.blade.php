@@ -206,7 +206,7 @@
                     <option value="other" {{ request('source') == 'other' ? 'selected' : '' }}>Other</option>
                 </select>
             </div>
-            @if($viewMode === 'all')
+            @if($viewMode === 'all' && (auth()->user()->hasRole('SUPER ADMIN') || auth()->user()->hasRole('PROJECT MANAGER')))
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Assigned To</label>
                 <select name="assigned_to" id="assigned_to_filter" onchange="this.form.submit()" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-teal-500 focus:border-teal-500">
@@ -242,7 +242,7 @@
             @if(request('source'))
                 <input type="hidden" name="source" value="{{ request('source') }}">
             @endif
-            @if(request('assigned_to'))
+            @if(request('assigned_to') && (auth()->user()->hasRole('SUPER ADMIN') || auth()->user()->hasRole('PROJECT MANAGER')))
                 <input type="hidden" name="assigned_to" value="{{ request('assigned_to') }}">
             @endif
             @if(request('search'))
@@ -390,13 +390,17 @@
                         <tr>
                             <th class="w-32 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lead</th>
                             <th class="w-24 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
+                            @if(auth()->user()->hasRole('SUPER ADMIN') || auth()->user()->hasRole('PROJECT MANAGER'))
                             <th class="w-20 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assigned To</th>
+                            @endif
                             <th class="w-20 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source</th>
                             <th class="w-20 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                             <th class="w-24 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lead Stage</th>
                             <th class="w-20 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created By</th>
                             <th class="w-16 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
                             <th class="w-20 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
+                            <th class="w-20 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">New Lead</th>
+                            <th class="w-24 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quotations</th>
                             <th class="w-24 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
@@ -420,6 +424,7 @@
                                 @php
                                     $isAssignedUser = $lead->assigned_user_id == auth()->id();
                                     $isAdminOrManager = auth()->user()->hasRole('SUPER ADMIN') || auth()->user()->hasRole('SALES MANAGER');
+                                    $isSuperAdmin = auth()->user()->hasRole('SUPER ADMIN');
                                     $isUnassigned = $lead->assigned_user_id === null;
                                     $contactViewsArray = isset($contactViews) && is_array($contactViews) ? $contactViews : [];
                                     $hasViewedContact = in_array($lead->id, $contactViewsArray);
@@ -428,7 +433,13 @@
                                     $contactViewer = isset($contactViewsWithUsers[$lead->id]) ? $contactViewsWithUsers[$lead->id] : null;
                                 @endphp
                                 
-                                @if($canViewContact && !$hasViewedContact)
+                                @if($isSuperAdmin)
+                                    {{-- Super Admin - show contact directly without blur --}}
+                                    <div class="text-xs">
+                                        <div class="text-gray-900 truncate" title="{{ $lead->phone }}">{{ Str::limit($lead->phone, 12) }}</div>
+                                        <div class="text-xs text-gray-500 truncate" title="{{ $lead->email ?? 'No Email' }}">{{ Str::limit($lead->email ?? 'No Email', 12) }}</div>
+                                    </div>
+                                @elseif($canViewContact && !$hasViewedContact)
                                     {{-- Blurred contact - can be clicked to reveal (for assigned user, admin/manager, or unassigned leads) --}}
                                     <div class="text-xs" id="contact-container-{{ $lead->id }}">
                                         <div class="relative flex items-center">
@@ -471,6 +482,7 @@
                                     </div>
                                 @endif
                             </td>
+                            @if(auth()->user()->hasRole('SUPER ADMIN') || auth()->user()->hasRole('PROJECT MANAGER'))
                             <td class="px-3 py-3 whitespace-nowrap" id="assigned-to-{{ $lead->id }}">
                                 @if($lead->assignedUser)
                                     <div class="text-xs">
@@ -504,6 +516,7 @@
                                     <span class="text-xs text-gray-400">Unassigned</span>
                                 @endif
                             </td>
+                            @endif
                             <td class="px-3 py-3 whitespace-nowrap">
                                 <span class="inline-flex items-center px-1 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                     {{ ucfirst(str_replace('_', ' ', $lead->source)) }}
@@ -558,6 +571,30 @@
                             <td class="px-3 py-3 whitespace-nowrap text-xs text-gray-900">
                                 {{ $lead->estimated_value ? '₹' . number_format($lead->estimated_value) : 'N/A' }}
                             </td>
+                            <td class="px-3 py-3 whitespace-nowrap text-xs">
+                                @php
+                                    $isNewLead = $lead->created_at >= now()->subDays(7);
+                                @endphp
+                                @if($isNewLead)
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                                        New
+                                    </span>
+                                @else
+                                    <span class="text-gray-500 text-xs">
+                                        {{ $lead->created_at ? $lead->created_at->format('M d, Y') : '-' }}
+                                    </span>
+                                @endif
+                            </td>
+                            <td class="px-3 py-3 whitespace-nowrap text-xs">
+                                @php $quotationCount = $lead->latestQuotations->count(); @endphp
+                                @if($quotationCount > 0)
+                                    <a href="{{ route('leads.show', $lead) }}#quotations" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                        {{ $quotationCount }} {{ Str::plural('Quotation', $quotationCount) }}
+                                    </a>
+                                @else
+                                    <span class="text-gray-400 text-xs">None</span>
+                                @endif
+                            </td>
                             <td class="px-3 py-3 whitespace-nowrap text-sm font-medium">
                                 <div class="flex items-center space-x-1">
                                     <a href="{{ route('leads.show', $lead) }}" class="text-teal-600 hover:text-teal-900 text-xs leading-none">View</a>
@@ -570,7 +607,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="10" class="px-3 py-4 text-center text-gray-500">No leads found</td>
+                            <td colspan="13" class="px-3 py-4 text-center text-gray-500">No leads found</td>
                         </tr>
                         @endforelse
                     </tbody>

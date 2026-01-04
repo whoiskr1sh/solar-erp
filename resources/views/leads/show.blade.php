@@ -44,6 +44,7 @@
                         <p class="text-sm text-gray-900">{{ $lead->company ?? 'Not specified' }}</p>
                     </div>
 
+                    @if(auth()->user()->hasRole('SUPER ADMIN'))
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
                         <p class="text-sm text-gray-900">{{ $lead->phone }}</p>
@@ -53,6 +54,7 @@
                         <label class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
                         <p class="text-sm text-gray-900">{{ $lead->email ?? 'Not provided' }}</p>
                     </div>
+                    @endif
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Source</label>
@@ -156,7 +158,9 @@
                     <a href="{{ route('quotations.show', $quotation) }}" class="block p-3 border border-gray-200 rounded-md hover:bg-gray-50">
                         <div class="flex justify-between items-center">
                             <div>
-                                <p class="text-sm font-medium text-gray-900">{{ $quotation->quotation_number }}</p>
+                                <p class="text-sm font-medium text-gray-900">
+                                    {{ $quotation->quotation_number }}
+                                </p>
                                 <p class="text-xs text-gray-500">{{ $quotation->created_at->format('M d, Y') }}</p>
                             </div>
                             <span class="text-sm text-gray-900">₹{{ number_format($quotation->total_amount) }}</span>

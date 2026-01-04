@@ -50,8 +50,8 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Status *</label>
                     <select name="status" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500">
-                        <option value="active" {{ old('status') == 'active' ? 'selected' : '' }}>Active</option>
-                        <option value="draft" {{ old('status') == 'draft' ? 'selected' : '' }}>Draft</option>
+                        <option value="active" {{ old('status', 'active') == 'active' ? 'selected' : '' }}>Active (Visible to All Users)</option>
+                        <option value="draft" {{ old('status') == 'draft' ? 'selected' : '' }}>Draft (Hidden)</option>
                         <option value="archived" {{ old('status') == 'archived' ? 'selected' : '' }}>Archived</option>
                     </select>
                     @error('status')

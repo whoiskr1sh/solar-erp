@@ -156,6 +156,7 @@
                 </div>
 
                 <!-- Assigned To -->
+                @if(auth()->user()->hasRole('SUPER ADMIN') || auth()->user()->hasRole('PROJECT MANAGER'))
                 <div>
                     <label for="assigned_user_id" class="block text-sm font-medium text-gray-700 mb-2">Assigned To <span class="text-gray-500 text-xs">(Optional)</span></label>
                     <select id="assigned_user_id" name="assigned_user_id" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-teal-500 focus:border-teal-500">
@@ -167,6 +168,7 @@
                         @endforeach
                     </select>
                 </div>
+                @endif
 
                 <!-- Estimated Value -->
                 <div>
@@ -184,6 +186,24 @@
                 <div class="md:col-span-2">
                     <label for="address" class="block text-sm font-medium text-gray-700 mb-2">Address</label>
                     <textarea id="address" name="address" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-teal-500 focus:border-teal-500" placeholder="Enter address...">{{ old('address', $lead->address) }}</textarea>
+                </div>
+
+                <!-- City -->
+                <div>
+                    <label for="city" class="block text-sm font-medium text-gray-700 mb-2">City</label>
+                    <input type="text" id="city" name="city" value="{{ old('city', $lead->city) }}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-teal-500 focus:border-teal-500" placeholder="Enter city...">
+                </div>
+
+                <!-- State -->
+                <div>
+                    <label for="state" class="block text-sm font-medium text-gray-700 mb-2">State</label>
+                    <input type="text" id="state" name="state" value="{{ old('state', $lead->state) }}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-teal-500 focus:border-teal-500" placeholder="Enter state...">
+                </div>
+
+                <!-- Pincode -->
+                <div>
+                    <label for="pincode" class="block text-sm font-medium text-gray-700 mb-2">Pincode</label>
+                    <input type="text" id="pincode" name="pincode" value="{{ old('pincode', $lead->pincode) }}" maxlength="6" pattern="[0-9]{6}" title="Please enter exactly 6 digits" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-teal-500 focus:border-teal-500" placeholder="123456" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                 </div>
 
                 <!-- Notes -->

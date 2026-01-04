@@ -209,6 +209,7 @@
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
                 </div>
+                @if(auth()->user()->hasRole('SUPER ADMIN') || auth()->user()->hasRole('PROJECT MANAGER'))
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Assigned To <span class="text-gray-500 text-xs">(Optional)</span></label>
                     <select name="assigned_user_id" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500">
@@ -223,44 +224,31 @@
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
                 </div>
+                @endif
             </div>
         </div>
 
-        <!-- Additional Information -->
+        <!-- Additional Information (container only, no main heading) -->
         <div class="bg-white rounded-lg shadow p-6">
-            <h3 class="text-lg font-medium text-gray-900 mb-4">Additional Information</h3>
             <div class="space-y-6">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                    <textarea name="notes" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500" placeholder="Add any additional notes about this lead...">{{ old('notes') }}</textarea>
-                    @error('notes')
-                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Requirements</label>
-                    <textarea name="requirements" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500" placeholder="Describe the lead's requirements...">{{ old('requirements') }}</textarea>
-                    @error('requirements')
-                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Electricity Bill (Attachment) <span class="text-red-500">*</span></label>
-                    <input type="file" name="electricity_bill" accept=".jpg,.jpeg,.png,.pdf" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500">
-                    @error('electricity_bill')
-                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Cancelled Cheque (Attachment) <span class="text-red-500">*</span></label>
-                    <input type="file" name="cancelled_cheque" accept=".jpg,.jpeg,.png,.pdf" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500">
-                    @error('cancelled_cheque')
-                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-                <div class="border-t border-gray-200 pt-4">
+                <!-- Documentation (including Electricity Bill & Cancelled Cheque) -->
+                <div class="pt-4">
                     <h4 class="text-md font-medium text-gray-900 mb-3">Documentation</h4>
                     <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Electricity Bill (Attachment) <span class="text-red-500">*</span></label>
+                            <input type="file" name="electricity_bill" accept=".jpg,.jpeg,.png,.pdf" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500">
+                            @error('electricity_bill')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Cancelled Cheque (Attachment) <span class="text-red-500">*</span></label>
+                            <input type="file" name="cancelled_cheque" accept=".jpg,.jpeg,.png,.pdf" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500">
+                            @error('cancelled_cheque')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Aadhar</label>
                             <input type="file" name="aadhar_document" accept=".jpg,.jpeg,.png,.pdf" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500">
@@ -300,6 +288,8 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Site Photos -->
                 <div class="border-t border-gray-200 pt-4">
                     <h4 class="text-md font-medium text-gray-900 mb-3">Site Photos</h4>
                     <div class="space-y-4">
@@ -314,6 +304,27 @@
                             <label class="block text-sm font-medium text-gray-700 mb-1">Post Installation Site Photo</label>
                             <input type="file" name="site_photo_post_installation" accept=".jpg,.jpeg,.png,.pdf" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500">
                             @error('site_photo_post_installation')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Additional Information (Notes & Requirements) moved to last -->
+                <div class="border-t border-gray-200 pt-4">
+                    <h4 class="text-md font-medium text-gray-900 mb-3">Additional Notes & Requirements</h4>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                            <textarea name="notes" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500" placeholder="Add any additional notes about this lead...">{{ old('notes') }}</textarea>
+                            @error('notes')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Requirements</label>
+                            <textarea name="requirements" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500" placeholder="Describe the lead's requirements...">{{ old('requirements') }}</textarea>
+                            @error('requirements')
                                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                             @enderror
                         </div>

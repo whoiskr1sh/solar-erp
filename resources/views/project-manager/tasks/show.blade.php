@@ -4,12 +4,6 @@
 
 @section('content')
 <div class="max-w-6xl mx-auto space-y-6">
-    @if(session('success'))
-    <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg">
-        {{ session('success') }}
-    </div>
-    @endif
-
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>

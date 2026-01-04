@@ -16,6 +16,10 @@ class DocumentController extends Controller
     {
         $query = Document::with(['lead', 'project', 'creator']);
 
+        // Show all documents (active and draft) to authenticated users
+        // Hide only deleted documents
+        $query->whereIn('status', ['active', 'draft', 'archived']);
+
         // Filters
         if ($request->filled('category')) {
             $query->where('category', $request->category);
@@ -42,12 +46,12 @@ class DocumentController extends Controller
         $projects = Project::where('status', '!=', 'cancelled')->get();
         
         $stats = [
-            'total' => Document::count(),
+            'total' => Document::whereIn('status', ['active', 'draft', 'archived'])->count(),
             'active' => Document::where('status', 'active')->count(),
             'draft' => Document::where('status', 'draft')->count(),
             'archived' => Document::where('status', 'archived')->count(),
-            'total_size' => Document::sum('file_size'),
-            'by_category' => Document::selectRaw('category, count(*) as count')
+            'total_size' => Document::whereIn('status', ['active', 'draft', 'archived'])->sum('file_size'),
+            'by_category' => Document::whereIn('status', ['active', 'draft', 'archived'])->selectRaw('category, count(*) as count')
                 ->groupBy('category')
                 ->get(),
         ];
@@ -154,6 +158,11 @@ class DocumentController extends Controller
 
     public function download(Document $document)
     {
+        // Allow download for all documents except deleted ones
+        if ($document->status === 'deleted' && !auth()->user()->hasRole('SUPER ADMIN')) {
+            return redirect()->back()->with('error', 'You do not have permission to download this document!');
+        }
+
         if (!Storage::disk('public')->exists($document->file_path)) {
             return redirect()->back()->with('error', 'File not found!');
         }
@@ -163,6 +172,11 @@ class DocumentController extends Controller
 
     public function preview(Document $document)
     {
+        // Allow preview for all documents except deleted ones
+        if ($document->status === 'deleted' && !auth()->user()->hasRole('SUPER ADMIN')) {
+            return redirect()->back()->with('error', 'You do not have permission to preview this document!');
+        }
+
         if (!Storage::disk('public')->exists($document->file_path)) {
             return redirect()->back()->with('error', 'File not found!');
         }

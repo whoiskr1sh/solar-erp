@@ -1281,6 +1281,20 @@
                         </svg>
                         <span class="font-medium text-sm">Reports</span>
                     </a></li>
+                    <li>
+                        <a href="{{ route('admin.duplicate-lead-approvals.index') }}" class="flex items-center px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 {{ request()->routeIs('admin.duplicate-lead-approvals.*') ? 'bg-blue-50 text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white' }}">
+                            <svg class="w-5 h-5 mr-3 {{ request()->routeIs('admin.duplicate-lead-approvals.*') ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span class="font-medium text-sm">Duplicate Lead Approvals</span>
+                            @php
+                                $pendingCount = \App\Models\DuplicateLeadApproval::where('status', 'pending')->count();
+                            @endphp
+                            @if($pendingCount > 0)
+                                <span class="ml-auto bg-red-500 text-white text-xs font-bold rounded-full px-2 py-0.5">{{ $pendingCount }}</span>
+                            @endif
+                        </a>
+                    </li>
                     <li><a href="{{ route('crm.dashboard') }}" class="flex items-center px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 {{ request()->routeIs('crm.dashboard') ? 'bg-blue-50 text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white' }}">
                         <svg class="w-5 h-5 mr-3 {{ request()->routeIs('crm.dashboard') ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
@@ -1733,7 +1747,6 @@
                         </div>
                         <ul id="hr" class="ml-8 mt-2 space-y-1 hidden">
                             <li><a href="{{ route('hr.employee-management') }}" class="block px-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-all duration-200 {{ request()->routeIs('hr.employee-management') ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30' : '' }}">Employee Management</a></li>
-                            <li><a href="{{ route('hr.leave-management', ['role' => strtolower(str_replace(' ', '-', auth()->user()->roles->first()->name ?? 'default'))]) }}" class="block px-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-all duration-200 {{ request()->routeIs('hr.leave-management') ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30' : '' }}">Leave Management</a></li>
                             <li><a href="{{ route('hr.attendance') }}" class="block px-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-all duration-200 {{ request()->routeIs('hr.attendance') ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30' : '' }}">Attendance</a></li>
                             <li><a href="{{ route('hr.salary-payroll') }}" class="block px-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-all duration-200 {{ request()->routeIs('hr.salary-payroll') ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30' : '' }}">Salary & Payroll</a></li>
                             <li><a href="{{ route('hr.auto-salary-slip') }}" class="block px-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-all duration-200 {{ request()->routeIs('hr.auto-salary-slip') ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30' : '' }}">Auto Salary Slip</a></li>
@@ -2043,29 +2056,7 @@
 
             <!-- Page Content -->
             <main class="flex-1 p-3 sm:p-4 md:p-6 bg-gray-50 dark:bg-gray-900 min-h-screen overflow-x-hidden">
-                @if(session('success'))
-                    <div class="mb-6 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-200 px-4 py-3 rounded-lg shadow-sm">
-                        <div class="flex items-center">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            {{ session('success') }}
-                        </div>
-                    </div>
-                @endif
-
-                @if(session('error'))
-                    <div class="mb-6 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 px-4 py-3 rounded-lg shadow-sm">
-                        <div class="flex items-center">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            {{ session('error') }}
-                        </div>
-                    </div>
-                @endif
-
-                @if (isset($showTodoBlur) && $showTodoBlur)
+                @if (isset($showTodoBlur) && $showTodoBlur && (!auth()->check() || (auth()->user()->roles->first()->name ?? '') !== 'SUPER ADMIN'))
     <div class="blur-overlay">
         <div class="todo-card">
             @yield('content')
@@ -2082,6 +2073,112 @@
     @yield('scripts')
     
     <script>
+        // Global toast helper - shows top-right notifications for all users
+        window.showGlobalToast = function(message, type = 'success') {
+            if (!message) return;
+
+            const containerId = 'globalToastContainer';
+            let container = document.getElementById(containerId);
+
+            if (!container) {
+                container = document.createElement('div');
+                container.id = containerId;
+                container.className = 'fixed top-4 right-4 z-50 space-y-3 pointer-events-none';
+                document.body.appendChild(container);
+            }
+
+            const typeClasses = {
+                success: 'bg-emerald-600',
+                error: 'bg-red-600',
+                warning: 'bg-amber-600',
+                info: 'bg-sky-600',
+            };
+
+            const typeColors = {
+                success: '#059669', // emerald-600
+                error: '#dc2626',   // red-600
+                warning: '#d97706', // amber-600
+                info: '#0284c7',    // sky-600
+            };
+
+            const toast = document.createElement('div');
+            toast.className = 'pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl text-sm text-white transition transform duration-300 translate-y-0 opacity-100 border border-black/10';
+            toast.classList.add(typeClasses[type] || typeClasses.success);
+            toast.style.backgroundColor = typeColors[type] || typeColors.success;
+            toast.style.opacity = '0.98';
+            toast.style.backdropFilter = 'blur(6px)';
+
+            const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            icon.setAttribute('class', 'w-5 h-5');
+            icon.setAttribute('fill', 'none');
+            icon.setAttribute('stroke', 'currentColor');
+            icon.setAttribute('viewBox', '0 0 24 24');
+
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('stroke-linecap', 'round');
+            path.setAttribute('stroke-linejoin', 'round');
+            path.setAttribute('stroke-width', '2');
+
+            if (type === 'error') {
+                path.setAttribute('d', 'M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z');
+            } else if (type === 'warning') {
+                path.setAttribute('d', 'M12 9v4m0 4h.01M10.29 3.86L1.82 18a1 1 0 00.86 1.5h18.64a1 1 0 00.86-1.5L13.71 3.86a1 1 0 00-1.72 0z');
+            } else if (type === 'info') {
+                path.setAttribute('d', 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z');
+            } else {
+                path.setAttribute('d', 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z');
+            }
+
+            icon.appendChild(path);
+
+            const textSpan = document.createElement('span');
+            textSpan.textContent = message;
+
+            const closeButton = document.createElement('button');
+            closeButton.type = 'button';
+            closeButton.className = 'ml-2 text-white/80 hover:text-white focus:outline-none';
+            closeButton.innerHTML = '&times;';
+            closeButton.onclick = () => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 200);
+            };
+
+            const content = document.createElement('div');
+            content.className = 'flex items-center';
+            content.appendChild(icon);
+            content.appendChild(textSpan);
+
+            toast.appendChild(content);
+            toast.appendChild(closeButton);
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                if (!toast.isConnected) return;
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 200);
+            }, 3200);
+        };
+
+        // Trigger toast from Laravel flash messages
+        document.addEventListener('DOMContentLoaded', function() {
+            @if(session('success'))
+                window.showGlobalToast(@json(session('success')), 'success');
+            @endif
+
+            @if(session('error'))
+                window.showGlobalToast(@json(session('error')), 'error');
+            @endif
+
+            @if(session('warning'))
+                window.showGlobalToast(@json(session('warning')), 'warning');
+            @endif
+
+            @if(session('info'))
+                window.showGlobalToast(@json(session('info')), 'info');
+            @endif
+        });
+
         function toggleSubmenu(menuId) {
             const submenu = document.getElementById(menuId);
             if (!submenu) return;

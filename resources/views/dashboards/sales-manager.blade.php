@@ -183,7 +183,9 @@
                             <i class="fas fa-file-invoice text-purple-600 text-sm"></i>
                         </div>
                         <div class="ml-3">
-                            <p class="text-sm font-medium text-gray-900">{{ $quotation->quotation_number ?? 'QT-'.$quotation->id }}</p>
+                            <p class="text-sm font-medium text-gray-900">
+                                {{ $quotation->quotation_number ?? 'QT-'.$quotation->id }}
+                            </p>
                             <p class="text-xs text-gray-500">₹{{ number_format($quotation->total_amount ?? 0) }}</p>
                         </div>
                     </div>

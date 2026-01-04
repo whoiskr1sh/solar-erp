@@ -5,16 +5,12 @@
     <!-- Header -->
     <div class="flex justify-between items-center mb-6">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">Quotation Details</h1>
+            <h1 class="text-2xl font-bold text-gray-900">
+                Quotation Details
+            </h1>
             <p class="text-gray-600">Quotation #{{ $quotation->quotation_number }}</p>
         </div>
         <div class="flex space-x-3">
-            <a href="{{ route('quotations.create-revision', $quotation) }}" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg flex items-center">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                </svg>
-                Create Revision
-            </a>
             <a href="{{ route('quotations.edit', $quotation) }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
@@ -183,6 +179,12 @@
                         <p class="text-sm text-gray-900">{{ $quotation->last_modified_at->setTimezone('Asia/Kolkata')->format('M d, Y h:i A') }}</p>
                     </div>
                     @endif
+                    @if($quotation->revised_quotation)
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Revised Quotation Notes</label>
+                        <p class="text-sm text-gray-900">{{ $quotation->revised_quotation }}</p>
+                    </div>
+                    @endif
                 </div>
             </div>
 
@@ -207,65 +209,10 @@
                 </div>
             </div>
 
-            <!-- Revision History -->
-            @if($allRevisions && $allRevisions->count() > 1)
-            <div class="bg-white rounded-lg shadow p-6">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-medium text-gray-900">Revision History</h3>
-                    @if($latestQuotation && $latestQuotation->id == $quotation->id && $latestQuotation->is_latest)
-                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                            Latest Revision
-                        </span>
-                    @endif
-                </div>
-                <div class="space-y-2">
-                    @foreach($allRevisions as $rev)
-                    <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg {{ $rev->id == $quotation->id ? 'bg-blue-50 border-blue-300' : '' }}">
-                        <div class="flex-1">
-                            <div class="flex items-center space-x-2">
-                                <a href="{{ route('quotations.show', $rev) }}" class="text-sm font-medium {{ $rev->id == $quotation->id ? 'text-blue-600' : 'text-gray-900 hover:text-blue-600' }}">
-                                    {{ $rev->quotation_number }}
-                                    @if($rev->is_revision)
-                                        <span class="text-xs text-gray-500">(Rev. {{ $rev->revision_number }})</span>
-                                    @else
-                                        <span class="text-xs text-gray-500">(Original)</span>
-                                    @endif
-                                </a>
-                                @if($rev->is_latest)
-                                    <span class="inline-flex px-2 py-0.5 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                                        Latest
-                                    </span>
-                                @endif
-                            </div>
-                            <div class="mt-1 text-xs text-gray-500">
-                                {{ $rev->quotation_date->format('M d, Y') }} • 
-                                <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium {{ $rev->status_badge }}">
-                                    {{ ucfirst($rev->status) }}
-                                </span>
-                            </div>
-                        </div>
-                        @if($rev->id != $quotation->id)
-                        <a href="{{ route('quotations.show', $rev) }}" class="text-xs text-blue-600 hover:text-blue-800">
-                            View
-                        </a>
-                        @endif
-                    </div>
-                    @endforeach
-                </div>
-            </div>
-            @endif
-
             <!-- Actions -->
             <div class="bg-white rounded-lg shadow p-6">
                 <h3 class="text-lg font-medium text-gray-900 mb-4">Actions</h3>
                 <div class="space-y-3">
-                    <a href="{{ route('quotations.create-revision', $quotation) }}" class="w-full bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg flex items-center justify-center">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                        </svg>
-                        Create Revision
-                    </a>
-                    
                     <a href="{{ route('quotations.preview', $quotation) }}" target="_blank" class="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center justify-center">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
