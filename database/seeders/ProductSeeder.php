@@ -1,0 +1,193 @@
+<?php
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Database\Seeder;
+use App\Models\Product;
+
+class ProductSeeder extends Seeder
+{
+    public function run(): void
+    {
+        // Clear existing products to prevent duplicates
+        \DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        \DB::table('products')->truncate();
+        \DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        
+        $products = [
+            [
+                'name' => 'Solar Panel 540W Monocrystalline',
+                'sku' => 'SP-540W-MC-001',
+                'description' => 'High efficiency 540W monocrystalline solar panel with 22% efficiency rating. Perfect for residential and commercial installations.',
+                'category' => 'Solar Panels',
+                'unit' => 'pcs',
+                'purchase_price' => 18000,
+                'selling_price' => 22000,
+                'min_stock_level' => 10,
+                'current_stock' => 25,
+                'hsn_code' => '8541.40.12',
+                'gst_rate' => 18.00,
+                'is_active' => true,
+            ],
+            [
+                'name' => 'Solar Inverter 5kW String',
+                'sku' => 'SI-5KW-STR-001',
+                'description' => '5kW string inverter with MPPT technology and WiFi monitoring. Compatible with most solar panel configurations.',
+                'category' => 'Inverters',
+                'unit' => 'pcs',
+                'purchase_price' => 45000,
+                'selling_price' => 55000,
+                'min_stock_level' => 5,
+                'current_stock' => 8,
+                'hsn_code' => '8504.40.95',
+                'gst_rate' => 18.00,
+                'is_active' => true,
+            ],
+            [
+                'name' => 'Solar Mounting Structure - Rooftop',
+                'sku' => 'SMS-RT-001',
+                'description' => 'Galvanized steel mounting structure for rooftop solar installations. Includes all necessary hardware and brackets.',
+                'category' => 'Mounting Systems',
+                'unit' => 'set',
+                'purchase_price' => 8000,
+                'selling_price' => 12000,
+                'min_stock_level' => 15,
+                'current_stock' => 3,
+                'hsn_code' => '7308.90.00',
+                'gst_rate' => 18.00,
+                'is_active' => true,
+            ],
+            [
+                'name' => 'DC Cable 4mm² Solar Grade',
+                'sku' => 'DC-CBL-4MM-001',
+                'description' => 'UV resistant DC cable for solar panel connections. 4mm² cross section, suitable for outdoor use.',
+                'category' => 'Cables & Wiring',
+                'unit' => 'meter',
+                'purchase_price' => 45,
+                'selling_price' => 65,
+                'min_stock_level' => 1000,
+                'current_stock' => 0,
+                'hsn_code' => '8544.42.90',
+                'gst_rate' => 18.00,
+                'is_active' => true,
+            ],
+            [
+                'name' => 'MC4 Connectors Male-Female Set',
+                'sku' => 'MC4-MF-SET-001',
+                'description' => 'Waterproof MC4 connectors for solar panel connections. Includes male and female connectors with crimping tool.',
+                'category' => 'Connectors',
+                'unit' => 'set',
+                'purchase_price' => 120,
+                'selling_price' => 180,
+                'min_stock_level' => 50,
+                'current_stock' => 12,
+                'hsn_code' => '8536.69.90',
+                'gst_rate' => 18.00,
+                'is_active' => true,
+            ],
+            [
+                'name' => 'Solar Battery 100Ah Tubular',
+                'sku' => 'SB-100AH-TUB-001',
+                'description' => '100Ah tubular battery for solar storage applications. Deep cycle design with 5-year warranty.',
+                'category' => 'Batteries',
+                'unit' => 'pcs',
+                'purchase_price' => 12000,
+                'selling_price' => 15000,
+                'min_stock_level' => 8,
+                'current_stock' => 15,
+                'hsn_code' => '8507.20.00',
+                'gst_rate' => 18.00,
+                'is_active' => true,
+            ],
+            [
+                'name' => 'Solar Charge Controller 40A MPPT',
+                'sku' => 'SCC-40A-MPPT-001',
+                'description' => '40A MPPT charge controller with LCD display and USB port. Maximum power point tracking for optimal efficiency.',
+                'category' => 'Charge Controllers',
+                'unit' => 'pcs',
+                'purchase_price' => 8500,
+                'selling_price' => 11000,
+                'min_stock_level' => 10,
+                'current_stock' => 6,
+                'hsn_code' => '8504.40.95',
+                'gst_rate' => 18.00,
+                'is_active' => true,
+            ],
+            [
+                'name' => 'Solar Panel Junction Box',
+                'sku' => 'SPJB-001',
+                'description' => 'IP67 rated junction box for solar panel connections. Includes bypass diodes and terminal blocks.',
+                'category' => 'Accessories',
+                'unit' => 'pcs',
+                'purchase_price' => 800,
+                'selling_price' => 1200,
+                'min_stock_level' => 20,
+                'current_stock' => 35,
+                'hsn_code' => '8536.69.90',
+                'gst_rate' => 18.00,
+                'is_active' => true,
+            ],
+            [
+                'name' => 'Ground Mounting Structure',
+                'sku' => 'GMS-001',
+                'description' => 'Ground mounting structure for large scale solar installations. Galvanized steel with concrete foundation.',
+                'category' => 'Mounting Systems',
+                'unit' => 'set',
+                'purchase_price' => 15000,
+                'selling_price' => 20000,
+                'min_stock_level' => 5,
+                'current_stock' => 2,
+                'hsn_code' => '7308.90.00',
+                'gst_rate' => 18.00,
+                'is_active' => true,
+            ],
+            [
+                'name' => 'Solar Monitoring System',
+                'sku' => 'SMS-001',
+                'description' => 'Real-time solar system monitoring with mobile app. Tracks energy production, consumption, and system health.',
+                'category' => 'Monitoring',
+                'unit' => 'pcs',
+                'purchase_price' => 12000,
+                'selling_price' => 16000,
+                'min_stock_level' => 3,
+                'current_stock' => 0,
+                'hsn_code' => '9032.89.00',
+                'gst_rate' => 18.00,
+                'is_active' => true,
+            ],
+            [
+                'name' => 'AC Cable 6mm² THW',
+                'sku' => 'AC-CBL-6MM-001',
+                'description' => 'AC cable for inverter to grid connections. 6mm² cross section with THW insulation.',
+                'category' => 'Cables & Wiring',
+                'unit' => 'meter',
+                'purchase_price' => 85,
+                'selling_price' => 120,
+                'min_stock_level' => 500,
+                'current_stock' => 750,
+                'hsn_code' => '8544.42.90',
+                'gst_rate' => 18.00,
+                'is_active' => true,
+            ],
+            [
+                'name' => 'Solar Panel Cleaning Kit',
+                'sku' => 'SPCK-001',
+                'description' => 'Professional solar panel cleaning kit with telescopic pole, soft brush, and biodegradable cleaner.',
+                'category' => 'Maintenance',
+                'unit' => 'kit',
+                'purchase_price' => 2500,
+                'selling_price' => 3500,
+                'min_stock_level' => 5,
+                'current_stock' => 8,
+                'hsn_code' => '8479.89.00',
+                'gst_rate' => 18.00,
+                'is_active' => true,
+            ],
+        ];
+
+        foreach ($products as $productData) {
+            Product::create($productData);
+        }
+    }
+}

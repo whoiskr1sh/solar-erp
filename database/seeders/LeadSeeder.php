@@ -1,0 +1,168 @@
+<?php
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Database\Seeder;
+use App\Models\Lead;
+use App\Models\User;
+
+class LeadSeeder extends Seeder
+{
+    public function run(): void
+    {
+        $users = User::all();
+        
+        $leads = [
+            [
+                'name' => 'Rajesh Kumar',
+                'email' => 'rajesh@example.com',
+                'phone' => '+91-9876543210',
+                'company' => 'Solar Solutions Pvt Ltd',
+                'address' => '123, MG Road, Mumbai, Maharashtra',
+                'source' => 'website',
+                'status' => 'interested',
+                'priority' => 'high',
+                'estimated_value' => 500000,
+                'expected_close_date' => now()->addDays(30),
+                'assigned_user_id' => $users->first()->id,
+                'created_by' => $users->first()->id,
+                'notes' => 'Interested in rooftop solar installation for office building.',
+                'follow_up_date' => now()->addDays(10),
+                'last_follow_up_at' => now(),
+            ],
+            [
+                'name' => 'Priya Sharma',
+                'email' => 'priya@techcorp.com',
+                'phone' => '+91-9876543211',
+                'company' => 'TechCorp Industries',
+                'address' => '456, IT Park, Bangalore, Karnataka',
+                'source' => 'indiamart',
+                'status' => 'partially_interested',
+                'priority' => 'medium',
+                'estimated_value' => 750000,
+                'expected_close_date' => now()->addDays(45),
+                'assigned_user_id' => $users->skip(1)->first()->id ?? $users->first()->id,
+                'created_by' => $users->first()->id,
+                'notes' => 'Looking for commercial solar power system.',
+                'follow_up_date' => now()->addDays(10),
+                'last_follow_up_at' => now(),
+            ],
+            [
+                'name' => 'Amit Patel',
+                'email' => 'amit@greenenergy.com',
+                'phone' => '+91-9876543212',
+                'company' => 'Green Energy Solutions',
+                'address' => '789, Industrial Area, Ahmedabad, Gujarat',
+                'source' => 'referral',
+                'status' => 'interested',
+                'priority' => 'urgent',
+                'estimated_value' => 1200000,
+                'expected_close_date' => now()->addDays(15),
+                'assigned_user_id' => $users->first()->id,
+                'created_by' => $users->first()->id,
+                'notes' => 'High priority lead - ready to proceed with large installation.',
+                'follow_up_date' => now()->addDays(10),
+                'last_follow_up_at' => now(),
+            ],
+            [
+                'name' => 'Sunita Singh',
+                'email' => 'sunita@residential.com',
+                'phone' => '+91-9876543213',
+                'company' => null,
+                'address' => '321, Residential Colony, Delhi',
+                'source' => 'meta_ads',
+                'status' => 'partially_interested',
+                'priority' => 'medium',
+                'estimated_value' => 250000,
+                'expected_close_date' => now()->addDays(20),
+                'assigned_user_id' => $users->skip(1)->first()->id ?? $users->first()->id,
+                'created_by' => $users->first()->id,
+                'notes' => 'Residential solar installation for 3BHK house.',
+                'follow_up_date' => now()->addDays(10),
+                'last_follow_up_at' => now(),
+            ],
+            [
+                'name' => 'Vikram Mehta',
+                'email' => 'vikram@manufacturing.com',
+                'phone' => '+91-9876543214',
+                'company' => 'Mehta Manufacturing',
+                'address' => '654, Industrial Zone, Pune, Maharashtra',
+                'source' => 'justdial',
+                'status' => 'not_reachable',
+                'priority' => 'high',
+                'estimated_value' => 2000000,
+                'expected_close_date' => now()->addDays(10),
+                'assigned_user_id' => $users->first()->id,
+                'created_by' => $users->first()->id,
+                'notes' => 'Large scale industrial solar project - negotiating terms.',
+            ],
+            [
+                'name' => 'Kavita Reddy',
+                'email' => 'kavita@hospital.com',
+                'phone' => '+91-9876543215',
+                'company' => 'City Hospital',
+                'address' => '987, Medical District, Hyderabad, Telangana',
+                'source' => 'cold_call',
+                'status' => 'interested',
+                'priority' => 'medium',
+                'estimated_value' => 800000,
+                'expected_close_date' => now()->subDays(5),
+                'assigned_user_id' => $users->skip(1)->first()->id ?? $users->first()->id,
+                'created_by' => $users->first()->id,
+                'notes' => 'Successfully converted - hospital solar installation project.',
+                'follow_up_date' => now()->addDays(10),
+                'last_follow_up_at' => now(),
+            ],
+            [
+                'name' => 'Ravi Joshi',
+                'email' => 'ravi@school.edu',
+                'phone' => '+91-9876543216',
+                'company' => 'Delhi Public School',
+                'address' => '147, Education Hub, Delhi',
+                'source' => 'website',
+                'status' => 'not_interested',
+                'priority' => 'low',
+                'estimated_value' => 400000,
+                'expected_close_date' => now()->subDays(30),
+                'assigned_user_id' => $users->first()->id,
+                'created_by' => $users->first()->id,
+                'notes' => 'Lost to competitor - budget constraints.',
+            ],
+            [
+                'name' => 'Anjali Verma',
+                'email' => 'anjali@hotel.com',
+                'phone' => '+91-9876543217',
+                'company' => 'Grand Hotel',
+                'address' => '258, Tourist Area, Goa',
+                'source' => 'website',
+                'status' => 'not_answered',
+                'priority' => 'medium',
+                'estimated_value' => 600000,
+                'expected_close_date' => now()->addDays(25),
+                'assigned_user_id' => $users->skip(1)->first()->id ?? $users->first()->id,
+                'created_by' => $users->first()->id,
+                'notes' => 'Hotel solar installation - not responding to calls.',
+            ],
+            [
+                'name' => 'Mohammed Ali',
+                'email' => 'mohammed@factory.com',
+                'phone' => '+91-9876543218',
+                'company' => 'Textile Factory',
+                'address' => '369, Industrial Estate, Surat, Gujarat',
+                'source' => 'indiamart',
+                'status' => 'not_interested',
+                'priority' => 'low',
+                'estimated_value' => 300000,
+                'expected_close_date' => now()->addDays(60),
+                'assigned_user_id' => $users->first()->id,
+                'created_by' => $users->first()->id,
+                'notes' => 'Not interested at this time - will reconsider next year.',
+            ],
+        ];
+
+        foreach ($leads as $leadData) {
+            Lead::create($leadData);
+        }
+    }
+}

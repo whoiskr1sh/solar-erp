@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gantt Chart Export Test</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        button { padding: 10px 20px; margin: 10px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        #gantt-chart { width: 100%; height: 400px; border: 1px solid #ccc; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Gantt Chart Export Test</h1>
+        <p>This page tests the Gantt chart export functionality.</p>
+        
+        <button onclick="createTestChart()">Create Test Chart</button>
+        <button onclick="exportChart()">Export Chart</button>
+        <button onclick="exportAsPNG()">Export as PNG</button>
+        
+        <div id="gantt-chart"></div>
+        
+        <div id="status"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    
+    <script>
+        let ganttChart = null;
+        
+        function createTestChart() {
+            const tasks = [
+                {
+                    id: '1',
+                    name: 'Task 1',
+                    start: '2024-01-01',
+                    end: '2024-01-10',
+                    progress: 50
+                },
+                {
+                    id: '2',
+                    name: 'Task 2',
+                    start: '2024-01-05',
+                    end: '2024-01-15',
+                    progress: 75
+                },
+                {
+                    id: '3',
+                    name: 'Task 3',
+                    start: '2024-01-12',
+                    end: '2024-01-20',
+                    progress: 25
+                }
+            ];
+            
+            try {
+                ganttChart = new Gantt("#gantt-chart", tasks, {
+                    header_height: 50,
+                    column_width: 30,
+                    step: 24,
+                    view_modes: ['Day', 'Week', 'Month'],
+                    bar_height: 20,
+                    bar_corner_radius: 3,
+                    arrow_curve: 5,
+                    padding: 18
+                });
+                
+                document.getElementById('status').innerHTML = '<p style="color: green;">✅ Chart created successfully!</p>';
+                console.log('Chart created:', ganttChart);
+            } catch (error) {
+                document.getElementById('status').innerHTML = '<p style="color: red;">❌ Error creating chart: ' + error.message + '</p>';
+                console.error('Error:', error);
+            }
+        }
+        
+        function exportChart() {
+            if (!ganttChart) {
+                alert('Please create a chart first!');
+                return;
+            }
+            
+            try {
+                const svg = document.querySelector('#gantt-chart svg');
+                if (svg) {
+                    const svgData = new XMLSerializer().serializeToString(svg);
+                    const svgBlob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
+                    const svgUrl = URL.createObjectURL(svgBlob);
+                    
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = svgUrl;
+                    downloadLink.download = 'gantt-chart-test-' + new Date().toISOString().slice(0, 10) + '.svg';
+                    document.body.appendChild(downloadLink);
+                    downloadLink.click();
+                    document.body.removeChild(downloadLink);
+                    
+                    URL.revokeObjectURL(svgUrl);
+                    document.getElementById('status').innerHTML = '<p style="color: green;">✅ Chart exported as SVG!</p>';
+                } else {
+                    document.getElementById('status').innerHTML = '<p style="color: red;">❌ No SVG element found!</p>';
+                }
+            } catch (error) {
+                document.getElementById('status').innerHTML = '<p style="color: red;">❌ Export error: ' + error.message + '</p>';
+                console.error('Export error:', error);
+            }
+        }
+        
+        function exportAsPNG() {
+            if (!ganttChart) {
+                alert('Please create a chart first!');
+                return;
+            }
+            
+            try {
+                const chartElement = document.getElementById('gantt-chart');
+                if (chartElement) {
+                    html2canvas(chartElement, {
+                        backgroundColor: '#ffffff',
+                        scale: 2,
+                        useCORS: true,
+                        allowTaint: true
+                    }).then(function(canvas) {
+                        const link = document.createElement('a');
+                        link.download = 'gantt-chart-test-' + new Date().toISOString().slice(0, 10) + '.png';
+                        link.href = canvas.toDataURL();
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        document.getElementById('status').innerHTML = '<p style="color: green;">✅ Chart exported as PNG!</p>';
+                    }).catch(function(error) {
+                        document.getElementById('status').innerHTML = '<p style="color: red;">❌ PNG Export error: ' + error.message + '</p>';
+                        console.error('PNG Export error:', error);
+                    });
+                } else {
+                    document.getElementById('status').innerHTML = '<p style="color: red;">❌ No chart element found!</p>';
+                }
+            } catch (error) {
+                document.getElementById('status').innerHTML = '<p style="color: red;">❌ Export error: ' + error.message + '</p>';
+                console.error('Export error:', error);
+            }
+        }
+        
+        // Auto-create chart on page load
+        window.addEventListener('load', function() {
+            setTimeout(createTestChart, 1000);
+        });
+    </script>
+</body>
+</html>
+
