@@ -48,6 +48,9 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 // Public template download (no auth required)
 Route::get('/leads/download-template', [LeadController::class, 'downloadTemplate'])->name('leads.download-template');
 
+// Serve files from storage with fallback
+Route::get('/storage/leads/{category}/{filename}', [App\Http\Controllers\StorageController::class, 'serveFile']);
+
 // Test route for download (no auth required)
 Route::get('/test-download', function() {
     $csvContent = "Name,Phone,Email\n";
@@ -144,6 +147,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/quotations/{quotation}/send-email', [QuotationController::class, 'sendEmail'])->name('quotations.send-email');
         Route::get('/quotations/{quotation}/create-revision', [QuotationController::class, 'createRevision'])->name('quotations.create-revision');
         Route::post('/quotations/{quotation}/store-revision', [QuotationController::class, 'storeRevision'])->name('quotations.store-revision');
+        Route::get('/api/leads/{leadId}/quotations-list', [QuotationController::class, 'getQuotationsByLead'])->name('leads.quotations');
         
         // Documents
         Route::resource('documents', DocumentController::class);

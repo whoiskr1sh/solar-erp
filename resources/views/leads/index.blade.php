@@ -401,6 +401,7 @@
                             <th class="w-20 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
                             <th class="w-20 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">New Lead</th>
                             <th class="w-24 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quotations</th>
+                            <th class="w-28 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Revised Quotations</th>
                             <th class="w-24 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
@@ -592,7 +593,42 @@
                                         {{ $quotationCount }} {{ Str::plural('Quotation', $quotationCount) }}
                                     </a>
                                 @else
-                                    <span class="text-gray-400 text-xs">None</span>
+                                    <a href="{{ route('quotations.create', ['client_id' => $lead->id]) }}" class="inline-flex items-center px-3 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors duration-200 border border-blue-200">
+                                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                        </svg>
+                                        Create
+                                    </a>
+                                @endif
+                            </td>
+                            <td class="px-3 py-3 whitespace-nowrap text-xs">
+                                @php $revisedCount = $lead->revised_quotations_count ?? 0; @endphp
+                                @if($revisedCount > 0)
+                                    <a href="{{ route('leads.show', $lead) }}#quotations" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-pink-100 text-pink-800">
+                                        {{ $revisedCount }} {{ Str::plural('Revision', $revisedCount) }}
+                                    </a>
+                                @else
+                                    @php 
+                                        $existingQuotations = \App\Models\Quotation::where('client_id', $lead->id)
+                                            ->where('is_revision', false)
+                                            ->orWhere(function($q) use ($lead) {
+                                                $q->where('client_id', $lead->id)
+                                                  ->whereNull('parent_quotation_id');
+                                            })
+                                            ->distinct('id')
+                                            ->get()
+                                            ->unique('id');
+                                    @endphp
+                                    @if($existingQuotations->count() > 0)
+                                        <button type="button" onclick="openSelectQuotationModal({{ $lead->id }}, '{{ $lead->name }}')" class="inline-flex items-center px-3 py-1 rounded-md text-xs font-medium bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors duration-200 border border-amber-200">
+                                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                            </svg>
+                                            Select
+                                        </button>
+                                    @else
+                                        <span class="text-gray-400 text-xs">No Quotations</span>
+                                    @endif
                                 @endif
                             </td>
                             <td class="px-3 py-3 whitespace-nowrap text-sm font-medium">
@@ -891,4 +927,93 @@ function showNotification(message, type) {
         </div>
     </div>
 </div>
+
+<!-- Select Quotation Modal -->
+<div id="selectQuotationModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50 flex items-center justify-center">
+    <div class="w-96 h-96 bg-white rounded-lg shadow-xl border border-gray-200 flex flex-col p-5">
+        <div class="flex-1 overflow-hidden flex flex-col">
+            <h3 class="text-base font-semibold text-gray-900 mb-2">Select Quotation</h3>
+            <p class="text-xs text-gray-600 mb-3">For <strong id="selectedLeadName"></strong>:</p>
+            
+            <div id="quotationsList" class="flex-1 overflow-y-auto space-y-2 mb-3">
+                <!-- Quotations will be loaded here -->
+            </div>
+        </div>
+        
+        <div class="flex justify-end gap-2 pt-3 border-t border-gray-200">
+            <button type="button" onclick="closeSelectQuotationModal()" class="bg-gray-400 hover:bg-gray-500 text-white px-3 py-1.5 rounded text-sm">
+                Cancel
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function openSelectQuotationModal(leadId, leadName) {
+    const modal = document.getElementById('selectQuotationModal');
+    const quotationsList = document.getElementById('quotationsList');
+    const selectedLeadName = document.getElementById('selectedLeadName');
+    
+    if (!modal || !quotationsList || !selectedLeadName) {
+        console.error('Modal elements not found');
+        return;
+    }
+    
+    selectedLeadName.textContent = leadName;
+    quotationsList.innerHTML = '<p class="text-center text-gray-500">Loading quotations...</p>';
+    
+    // Fetch quotations for this lead
+    fetch(`/api/leads/${leadId}/quotations-list`, {
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+        }
+    })
+        .then(response => {
+            console.log('Response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Quotations data:', data);
+            if (data.quotations && data.quotations.length > 0) {
+                quotationsList.innerHTML = data.quotations.map(quotation => `
+                    <div class="p-3 border border-gray-200 rounded-md hover:bg-gray-50 cursor-pointer" onclick="selectQuotationForRevision(${quotation.id})">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-sm font-medium text-gray-900">${quotation.quotation_number}</p>
+                                <p class="text-xs text-gray-600">Date: ${new Date(quotation.quotation_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
+                                <p class="text-xs text-gray-600">Type: ${quotation.quotation_type.replace(/_/g, ' ').toUpperCase()}</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm font-semibold text-gray-900">₹${parseFloat(quotation.total_amount).toLocaleString('en-IN')}</p>
+                                <span class="inline-block px-2 py-0.5 rounded text-xs font-medium ${quotation.status === 'accepted' ? 'bg-green-100 text-green-800' : quotation.status === 'sent' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}">${quotation.status}</span>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                quotationsList.innerHTML = '<p class="text-center text-gray-500">No quotations found for this lead.</p>';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading quotations:', error);
+            quotationsList.innerHTML = '<p class="text-center text-red-500">Error loading quotations. Please refresh and try again.</p>';
+        });
+    
+    modal.classList.remove('hidden');
+}
+
+function closeSelectQuotationModal() {
+    const modal = document.getElementById('selectQuotationModal');
+    modal.classList.add('hidden');
+}
+
+function selectQuotationForRevision(quotationId) {
+    // Redirect to create revision page with the selected quotation
+    window.location.href = `/quotations/${quotationId}/create-revision`;
+}
+</script>
 @endsection

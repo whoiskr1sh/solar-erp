@@ -217,6 +217,7 @@
                             <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Status</th>
                             <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">Amount</th>
                             <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">Valid Until</th>
+                            <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Revised Quotation</th>
                             <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Actions</th>
                         </tr>
                     </thead>
@@ -271,6 +272,20 @@
                                 <div class="text-xs text-gray-900">{{ $quotation->valid_until ? $quotation->valid_until->format('M d') : 'N/A' }}</div>
                                 @if($quotation->valid_until && $quotation->valid_until < now())
                                     <span class="text-xs text-red-600">Expired</span>
+                                @endif
+                            </td>
+                            <td class="px-2 py-2 whitespace-nowrap">
+                                @if($quotation->is_revision)
+                                    <span class="inline-flex px-2 py-0.5 text-xs font-semibold rounded-full bg-pink-100 text-pink-800">
+                                        Revision #{{ $quotation->revision_number ?? 'N/A' }}
+                                    </span>
+                                    @if($quotation->is_latest)
+                                        <div class="text-xs text-green-700 mt-1">Latest</div>
+                                    @endif
+                                @else
+                                    <span class="inline-flex px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-50 text-blue-800">
+                                        Original
+                                    </span>
                                 @endif
                             </td>
                             <td class="px-2 py-2 whitespace-nowrap text-xs font-medium">

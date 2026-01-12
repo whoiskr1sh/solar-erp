@@ -102,16 +102,19 @@ class QuotationController extends Controller
         return view('quotations.index', compact('quotations', 'clients', 'projects', 'stats'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
         $clients = Lead::all();
         $projects = Project::where('status', '!=', 'cancelled')->get();
         $products = Product::where('is_active', true)->get();
         
+        // Get pre-selected client_id from query parameter if provided
+        $selectedClientId = $request->query('client_id');
+        
         // Generate quotation number
         $quotationNumber = 'QT-' . str_pad(Quotation::count() + 1, 4, '0', STR_PAD_LEFT);
         
-        return view('quotations.create', compact('clients', 'projects', 'products', 'quotationNumber'));
+        return view('quotations.create', compact('clients', 'projects', 'products', 'quotationNumber', 'selectedClientId'));
     }
 
     public function store(Request $request)
@@ -123,36 +126,44 @@ class QuotationController extends Controller
             'valid_until' => 'required|date|after:quotation_date',
             'client_id' => 'required|exists:leads,id',
             'project_id' => 'nullable|exists:projects,id',
+            'status' => 'required|in:draft,sent,accepted,rejected,expired',
             'subtotal' => 'required|numeric|min:0',
             'tax_amount' => 'required|numeric|min:0',
             'total_amount' => 'required|numeric|min:0',
             'notes' => 'nullable|string',
             'terms_conditions' => 'nullable|string',
             'follow_up_date' => 'nullable|date',
-            'items' => 'required|array|min:1',
-            'items.*.description' => 'required|string',
-            'items.*.quantity' => 'required|integer|min:1',
-            'items.*.rate' => 'required|numeric|min:0',
-            'items.*.amount' => 'required|numeric|min:0',
+            'items' => 'nullable|array',
+            'items.*.description' => 'nullable|string',
+            'items.*.quantity' => 'nullable|integer|min:1',
+            'items.*.rate' => 'nullable|numeric|min:0',
+            'items.*.amount' => 'nullable|numeric|min:0',
         ]);
 
-        $quotation = Quotation::create([
-            'quotation_number' => $request->quotation_number,
-            'quotation_type' => $request->quotation_type,
-            'quotation_date' => $request->quotation_date,
-            'valid_until' => $request->valid_until,
-            'client_id' => $request->client_id,
-            'project_id' => $request->project_id,
-            'subtotal' => $request->subtotal,
-            'tax_amount' => $request->tax_amount,
-            'total_amount' => $request->total_amount,
-            'notes' => $request->notes,
-            'terms_conditions' => $request->terms_conditions,
-            'follow_up_date' => $request->follow_up_date,
-            'created_by' => Auth::id(),
-        ]);
+        try {
+            $quotation = Quotation::create([
+                'quotation_number' => $request->quotation_number,
+                'quotation_type' => $request->quotation_type,
+                'quotation_date' => $request->quotation_date,
+                'valid_until' => $request->valid_until,
+                'client_id' => $request->client_id,
+                'project_id' => $request->project_id,
+                'status' => $request->status,
+                'subtotal' => $request->subtotal,
+                'tax_amount' => $request->tax_amount,
+                'total_amount' => $request->total_amount,
+                'notes' => $request->notes,
+                'terms_conditions' => $request->terms_conditions,
+                'follow_up_date' => $request->follow_up_date,
+                'created_by' => Auth::id(),
+                'is_revision' => false,
+                'is_latest' => true,
+            ]);
 
-        return redirect()->route('quotations.show', $quotation)->with('success', 'Quotation created successfully!');
+            return redirect()->route('quotations.show', $quotation)->with('success', 'Quotation created successfully!');
+        } catch (\Exception $e) {
+            return back()->withInput()->with('error', 'Error creating quotation: ' . $e->getMessage());
+        }
     }
 
     public function show(Quotation $quotation)
@@ -386,5 +397,43 @@ class QuotationController extends Controller
         ]);
 
         return redirect()->route('quotations.show', $revision)->with('success', 'Quotation revision created successfully!');
+    }
+
+    /**
+     * Get quotations for a specific lead (used by AJAX)
+     */
+    public function getQuotationsByLead($leadId)
+    {
+        try {
+            // Log for debugging
+            \Log::info('Fetching quotations for lead: ' . $leadId);
+            
+            $quotations = Quotation::where('client_id', $leadId)
+                ->where('is_revision', false)
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            \Log::info('Found ' . count($quotations) . ' quotations');
+
+            return response()->json([
+                'quotations' => $quotations->map(function($q) {
+                    return [
+                        'id' => $q->id,
+                        'quotation_number' => $q->quotation_number,
+                        'quotation_type' => $q->quotation_type,
+                        'quotation_date' => $q->quotation_date,
+                        'total_amount' => $q->total_amount,
+                        'status' => $q->status,
+                    ];
+                })
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error fetching quotations: ' . $e->getMessage());
+            \Log::error($e->getTraceAsString());
+            return response()->json([
+                'error' => 'Error fetching quotations: ' . $e->getMessage(),
+                'quotations' => []
+            ], 500);
+        }
     }
 }

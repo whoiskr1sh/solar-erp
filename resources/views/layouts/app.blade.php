@@ -2326,6 +2326,7 @@
                             configureTodoLoginModal(data);
                             modal.classList.remove('hidden');
                             document.body.style.overflow = 'hidden';
+                            document.body.classList.add('todo-blur');
                             document.body.classList.add('no-animations');
                         }
                     }
@@ -2344,6 +2345,7 @@
                             configureTodoLoginModal(data);
                             modal.classList.remove('hidden');
                             document.body.style.overflow = 'hidden';
+                            document.body.classList.add('todo-blur');
                             document.body.classList.add('no-animations');
                         }
                     }
@@ -2355,6 +2357,7 @@
             if (modal) {
                 modal.classList.add('hidden');
                 document.body.style.overflow = '';
+                document.body.classList.remove('todo-blur');
                 document.body.classList.remove('no-animations');
             }
         }
@@ -2414,7 +2417,7 @@
     </script>
 
     <!-- Todo Login Popup Modal -->
-    <div id="todoLoginModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div id="todoLoginModal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-2xl backdrop-saturate-150 todo-modal-overlay z-50 flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full p-6">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Daily To-Do List</h2>

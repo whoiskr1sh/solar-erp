@@ -39,6 +39,12 @@ class LeadController extends Controller
         // Base query used for both list and stats
         // Eager-load latest quotations so we can show quotation info per lead without N+1 queries
         $baseQuery = Lead::with(['assignedUser', 'creator', 'latestQuotations'])
+            ->withCount([
+                // Track how many revised quotations exist for each lead
+                'quotations as revised_quotations_count' => function ($q) {
+                    $q->where('is_revision', true);
+                },
+            ])
             // Exclude reassigned leads - they should only appear in the Reassigned Leads section
             ->where('is_reassigned', false);
 

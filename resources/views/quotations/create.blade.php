@@ -92,7 +92,7 @@
                     <select name="client_id" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500">
                         <option value="">Select Client</option>
                         @foreach(\App\Models\Lead::all() as $lead)
-                            <option value="{{ $lead->id }}" {{ old('client_id') == $lead->id ? 'selected' : '' }}>
+                            <option value="{{ $lead->id }}" {{ old('client_id', $selectedClientId ?? null) == $lead->id ? 'selected' : '' }}>
                                 {{ $lead->name }} - {{ $lead->company ?: 'No company' }}
                             </option>
                         @endforeach
