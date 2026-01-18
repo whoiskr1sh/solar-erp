@@ -1,4 +1,8 @@
 <?php
+// ...existing use statements...
+
+// API endpoint to save selected revised quotation for a lead
+Route::post('/api/leads/{lead}/select-revised-quotation', [App\Http\Controllers\LeadController::class, 'selectRevisedQuotation'])->name('leads.select-revised-quotation');
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
@@ -103,12 +107,16 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/crm-dashboard', [CrmDashboardController::class, 'index'])->name('crm.dashboard');
     
     // Leads - Specific routes must come BEFORE resource route to avoid conflicts
+    Route::get('/leads/{lead}/documents', [LeadController::class, 'documents'])->name('leads.documents');
+    Route::post('/leads/{lead}/documents', [LeadController::class, 'uploadDocuments'])->name('leads.documents.upload');
     Route::get('/leads/request-reassignment', [App\Http\Controllers\LeadReassignmentRequestController::class, 'create'])->name('leads.request-reassignment');
     Route::post('/leads/reassignment-requests', [App\Http\Controllers\LeadReassignmentRequestController::class, 'store'])->name('leads.reassignment-requests.store');
     Route::get('/leads/reassigned', [App\Http\Controllers\LeadController::class, 'reassigned'])->name('leads.reassigned');
     Route::post('/leads/import', [LeadController::class, 'import'])->name('leads.import');
     Route::get('/leads/export', [LeadController::class, 'export'])->name('leads.export');
-    Route::put('/leads/{lead}/status', [LeadController::class, 'updateStatus'])->name('leads.update-status');
+    Route::patch('/leads/{lead}/status', [LeadController::class, 'updateStatus'])->name('leads.updateStatus');
+    Route::put('/leads/{lead}/update-status', [LeadController::class, 'updateStatus'])->name('leads.update-status');
+    Route::patch('/leads/{lead}/stage', [LeadController::class, 'updateStage'])->name('leads.updateStage');
     Route::post('/leads/lookup-by-email', [LeadController::class, 'lookupByEmail'])->name('leads.lookup-by-email');
     Route::post('/leads/{lead}/reveal-contact', [LeadController::class, 'revealContact'])->name('leads.reveal-contact');
     

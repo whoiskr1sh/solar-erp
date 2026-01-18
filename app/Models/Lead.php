@@ -18,8 +18,14 @@ class Lead extends Model
         'electricity_bill_path', 'cancelled_cheque_path',
         'aadhar_path', 'pan_path', 'other_document_name', 'other_document_path', 'passport_photo_path',
         'site_photo_pre_installation_path', 'site_photo_post_installation_path',
-        'call_count', 'assigned_user_id', 'channel_partner_id', 'created_by', 'last_updated_by', 'is_reassigned'
+        'call_count', 'assigned_user_id', 'channel_partner_id', 'created_by', 'last_updated_by', 'is_reassigned',
+        'selected_revised_quotation_id'
     ];
+
+    public function selectedRevisedQuotation()
+    {
+        return $this->belongsTo(\App\Models\Quotation::class, 'selected_revised_quotation_id');
+    }
 
     protected $casts = [
         'estimated_value' => 'decimal:2',
@@ -148,7 +154,7 @@ class Lead extends Model
         
         // INTERESTED and PARTIALLY INTERESTED with overdue follow-up dates
         if (in_array($this->status, ['interested', 'partially_interested'])) {
-            if ($this->follow_up_date && $this->follow_up_date->isPast()) {
+            if ($this->follow_up_date && \Carbon\Carbon::parse($this->follow_up_date)->lt(now())) {
                 return true;
             }
         }
@@ -161,7 +167,7 @@ class Lead extends Model
      */
     public function isFollowUpOverdue(): bool
     {
-        return $this->follow_up_date && $this->follow_up_date->isPast();
+        return $this->follow_up_date && \Carbon\Carbon::parse($this->follow_up_date)->lt(now());
     }
 
     /**

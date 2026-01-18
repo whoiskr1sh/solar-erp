@@ -1,22 +1,34 @@
 <?php
-
 namespace App\Http\Controllers;
-
-use Illuminate\Http\Request;
-use App\Models\Lead;
-use App\Models\Quotation;
+use App\Models\ClientDocument;
 use App\Models\User;
 use App\Models\Notification;
 use App\Models\DuplicateLeadApproval;
 use App\Models\LeadContactView;
 use App\Models\LeadCall;
+use Illuminate\Http\Request;
+use App\Models\Lead;
+use App\Models\Quotation;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\LeadsImport;
 use App\Services\BackupService;
 
 class LeadController extends Controller
 {
+    // ...existing methods...
+
+    /**
+     * Show only new leads (status = 'new')
+     */
+    public function newLeads(Request $request)
+    {
+        $leads = \App\Models\Lead::where('lead_stage', 'new')->orderByDesc('created_at')->paginate(20);
+        return view('leads.new-leads', compact('leads'));
+    }
+
+    // ...existing methods...
     public function index(Request $request)
     {
         $user = Auth::user();
@@ -151,7 +163,9 @@ class LeadController extends Controller
         $contactViews = is_array($contactViews) ? $contactViews : [];
         $contactViewsWithUsers = is_array($contactViewsWithUsers) ? $contactViewsWithUsers : [];
 
-        return view('leads.index', compact('leads', 'users', 'stats', 'subCoordinators', 'contactViews', 'contactViewsWithUsers', 'viewMode'));
+        // For email blur logic: pass viewedLeadIds to Blade
+        $viewedLeadIds = $contactViews;
+        return view('leads.index', compact('leads', 'users', 'stats', 'subCoordinators', 'contactViews', 'contactViewsWithUsers', 'viewMode', 'viewedLeadIds'));
     }
 
     /**
@@ -224,8 +238,8 @@ class LeadController extends Controller
             'state' => 'nullable|string|max:100',
             'pincode' => 'nullable|string|regex:/^[0-9]{6}$/',
             'source' => 'required|in:website,indiamart,justdial,meta_ads,referral,cold_call,other',
-            'status' => 'required|in:interested,not_interested,partially_interested,not_reachable,not_answered',
-            'lead_stage' => 'nullable|in:quotation_sent,site_survey_done,solar_documents_collected,loan_documents_collected',
+            'status' => 'required|in:new,contacted,qualified,proposal,negotiation,converted,lost',
+            'lead_stage' => 'required|in:new,quotation_sent,site_survey_done,solar_documents_collected,loan_documents_collected',
             'priority' => 'required|in:low,medium,high,urgent',
             'estimated_value' => 'nullable|numeric|min:0',
             'expected_close_date' => 'nullable|date|after:today',
@@ -241,6 +255,11 @@ class LeadController extends Controller
             'site_photo_pre_installation' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
             'site_photo_post_installation' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
         ]);
+
+        // Ensure lead_stage is set to 'new' if not provided (for new leads)
+        if (!$request->filled('lead_stage')) {
+            $request->merge(['lead_stage' => 'new']);
+        }
 
         // Check if there's already a lead with the same email
         if ($request->filled('email')) {
@@ -312,6 +331,8 @@ class LeadController extends Controller
             'site_photo_post_installation',
         ]);
         $leadData['created_by'] = Auth::id();
+        $leadData['lead_stage'] = 'new';
+        $leadData['status'] = 'new';
 
         // Handle mandatory attachments
         if ($request->hasFile('electricity_bill')) {
@@ -766,11 +787,14 @@ class LeadController extends Controller
 
         $lead->update($updateData);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Lead status updated successfully!',
-            'lead' => $lead->fresh()
-        ]);
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Lead status updated successfully!',
+                'lead' => $lead->fresh()
+            ]);
+        }
+        return redirect()->back()->with('success', 'Lead status updated successfully!');
     }
 
     public function import(Request $request)
@@ -802,67 +826,72 @@ class LeadController extends Controller
     public function revealContact(Lead $lead)
     {
         $user = Auth::user();
-        
-        // Can view if: assigned to user, OR admin/manager, OR lead is unassigned (anyone can claim it)
-        $canView = ($lead->assigned_user_id === $user->id) || 
-                   $user->hasRole('SUPER ADMIN') || 
-                   $user->hasRole('SALES MANAGER') || 
-                   ($lead->assigned_user_id === null);
-        
-        if (!$canView) {
-            return response()->json([
-                'error' => 'You are not authorized to view this contact number. Only the assigned user can view it.',
-                'phone' => null
-            ], 403);
-        }
-        
-        // Record the view if not already viewed
-        // Also, if lead is not assigned, assign it to the user who views the contact
-        $alreadyViewed = LeadContactView::where('lead_id', $lead->id)
-            ->where('user_id', $user->id)
-            ->exists();
-        
-        if (!$alreadyViewed) {
-            LeadContactView::create([
-                'lead_id' => $lead->id,
+            Log::info('RevealContact called', [
                 'user_id' => $user->id,
-                'viewed_at' => now(),
+                'lead_id' => $lead->id,
+                'expects_json' => request()->expectsJson(),
+                'ajax' => request()->ajax(),
+                'headers' => request()->header(),
             ]);
-            
-            // If lead is not assigned and user is not admin/manager, assign it to the user who viewed
-            $wasAssigned = false;
-            if (!$lead->assigned_user_id && !$user->hasRole('SUPER ADMIN') && !$user->hasRole('SALES MANAGER')) {
-                $lead->update([
-                    'assigned_user_id' => $user->id,
-                    'last_updated_by' => $user->id,
+    {
+        $user = Auth::user();
+        // Superadmin can always view
+        if ($user->hasRole('SUPER ADMIN')) {
+            if (request()->expectsJson() || request()->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'email' => $lead->email,
+                    'phone' => $lead->phone,
+                    'message' => 'Contact details revealed.'
                 ]);
-                $wasAssigned = true;
-                $lead->refresh(); // Refresh to get updated relationships
             }
+            return redirect()->back()->with('success', 'Contact details revealed.');
         }
-        
-        // Get assigned user info if lead is assigned
-        $assignedUserInfo = null;
-        if ($lead->assigned_user_id) {
-            $assignedUser = $lead->assignedUser;
-            if ($assignedUser) {
-                $assignedUserInfo = [
-                    'id' => $assignedUser->id,
-                    'name' => $assignedUser->name,
-                    'email' => $assignedUser->email,
-                ];
+
+        // If lead is assigned to another user, block reveal
+        if ($lead->assigned_user_id !== null && $lead->assigned_user_id !== $user->id) {
+            if (request()->expectsJson() || request()->ajax()) {
+                return response()->json(['success' => false, 'message' => 'This lead is already assigned to another user.'], 403);
             }
+            abort(403, 'This lead is already assigned to another user.');
         }
-        
-        return response()->json([
-            'success' => true,
-            'phone' => $lead->phone,
-            'viewer_name' => $user->name,
-            'viewed_at' => now()->format('M d, Y g:i A'),
-            'was_assigned' => $wasAssigned ?? false,
-            'assigned_user' => $assignedUserInfo,
-            'message' => 'Contact number revealed successfully.'
+
+
+        // First-click wins for assignment, lock unless admin
+        if ($lead->assigned_user_id === null) {
+            $lead->assigned_user_id = $user->id;
+            $lead->last_updated_by = $user->id;
+            $lead->save();
+        }
+
+        // Record that this user has viewed this lead's contact (for UI and stats)
+        \App\Models\LeadContactView::firstOrCreate([
+            'lead_id' => $lead->id,
+            'user_id' => $user->id,
+        ], [
+            'viewed_at' => now(),
         ]);
+
+        // Enforce backend authorization: only assigned user can view
+        if ($lead->assigned_user_id !== $user->id) {
+            if (request()->expectsJson() || request()->ajax()) {
+                return response()->json(['success' => false, 'message' => 'You are not authorized to view this contact/email.'], 403);
+            }
+            abort(403, 'You are not authorized to view this contact/email.');
+        }
+
+        // If AJAX, return JSON with success
+        if (request()->expectsJson() || request()->ajax()) {
+            return response()->json([
+                'success' => true,
+                'email' => $lead->email,
+                'phone' => $lead->phone,
+                'message' => 'Contact details revealed.'
+            ]);
+        }
+        // Otherwise, redirect
+        return redirect()->back()->with('success', 'Contact details revealed.');
+    }
     }
 
     public function export()

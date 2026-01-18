@@ -132,12 +132,12 @@
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label for="follow_up_date" class="block text-sm font-medium text-gray-700 mb-2">Follow-up Date</label>
-                                <input type="date" id="follow_up_date" name="follow_up_date" value="{{ old('follow_up_date', $lead->follow_up_date ? $lead->follow_up_date->format('Y-m-d') : '') }}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-teal-500 focus:border-teal-500">
+                                <label for="follow_up_date" class="block text-sm font-medium text-gray-700 mb-2">Follow-up Date <span class="text-red-600">*</span></label>
+                                <input type="date" id="follow_up_date" name="follow_up_date" value="{{ old('follow_up_date', $lead->follow_up_date ? $lead->follow_up_date->format('Y-m-d') : '') }}" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-teal-500 focus:border-teal-500">
                             </div>
                             <div>
-                                <label for="follow_up_notes" class="block text-sm font-medium text-gray-700 mb-2">Follow-up Notes</label>
-                                <textarea id="follow_up_notes" name="follow_up_notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-teal-500 focus:border-teal-500" placeholder="Add notes for follow-up call or message...">{{ old('follow_up_notes', $lead->follow_up_notes) }}</textarea>
+                                <label for="follow_up_notes" class="block text-sm font-medium text-gray-700 mb-2">Follow-up Notes <span class="text-red-600">*</span></label>
+                                <textarea id="follow_up_notes" name="follow_up_notes" rows="2" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-teal-500 focus:border-teal-500" placeholder="Add notes for follow-up call or message...">{{ old('follow_up_notes', $lead->follow_up_notes) }}</textarea>
                             </div>
                         </div>
                     </div>

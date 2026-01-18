@@ -125,7 +125,19 @@
             
             <!-- Navigation -->
             <nav class="flex-1 p-3 sm:p-4 overflow-y-auto">
+                
                 <ul class="space-y-2 sm:space-y-3">
+                    <!-- New Leads Sidebar Link -->
+                    <li>
+                        <a href="{{ route('leads.index', ['status' => 'new']) }}" class="flex items-center px-3 py-2.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-all duration-200 {{ (request()->routeIs('leads.index') && request('status') == 'new') ? 'bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-r-2 border-red-600 dark:border-red-400' : 'text-red-700 dark:text-red-300 hover:text-red-900 dark:hover:text-white' }}">
+                            <svg class="w-5 h-5 mr-3 {{ (request()->routeIs('leads.index') && request('status') == 'new') ? 'text-red-600 dark:text-red-400' : 'text-red-500 dark:text-red-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" />
+                                <circle cx="12" cy="12" r="5" fill="currentColor" />
+                            </svg>
+                            <span class="font-medium text-sm">New Leads</span>
+                        </a>
+                    </li>
+
                     <!-- Role-Based Dashboard (Always at Top) -->
                     @if(auth()->user()->hasRole('SUPER ADMIN'))
                     <!-- Super Admin Dashboard -->

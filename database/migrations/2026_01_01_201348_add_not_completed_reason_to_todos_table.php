@@ -12,7 +12,9 @@ return new class extends Migration
     public function up()
     {
         Schema::table('todos', function (Blueprint $table) {
-            $table->text('not_completed_reason')->nullable()->after('remarks');
+            if (!Schema::hasColumn('todos', 'not_completed_reason')) {
+                $table->text('not_completed_reason')->nullable()->after('remarks');
+            }
         });
     }
     

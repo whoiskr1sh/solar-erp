@@ -17,6 +17,16 @@
     </div>
 
     <form method="POST" action="{{ route('leads.store') }}" class="space-y-6" enctype="multipart/form-data">
+                @if ($errors->any())
+                    <div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+                        <strong>There were some problems with your input:</strong>
+                        <ul class="mt-2 list-disc list-inside">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
         @csrf
         
         <!-- Basic Information -->
@@ -74,24 +84,12 @@
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
                 </div>
+                <input type="hidden" name="status" value="new">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Status *</label>
-                    <select name="status" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500" onchange="toggleFollowUpFields()">
-                        <option value="">Select Status</option>
-                        <option value="interested" {{ old('status') == 'interested' ? 'selected' : '' }}>Interested</option>
-                        <option value="not_interested" {{ old('status') == 'not_interested' ? 'selected' : '' }}>Not Interested</option>
-                        <option value="partially_interested" {{ old('status') == 'partially_interested' ? 'selected' : '' }}>Partially Interested</option>
-                        <option value="not_reachable" {{ old('status') == 'not_reachable' ? 'selected' : '' }}>Not Reachable</option>
-                        <option value="not_answered" {{ old('status') == 'not_answered' ? 'selected' : '' }}>Not Answered</option>
-                    </select>
-                    @error('status')
-                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Lead Stage</label>
-                    <select name="lead_stage" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Lead Stage *</label>
+                    <select name="lead_stage" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500">
                         <option value="">Select Lead Stage</option>
+                        <option value="new" {{ old('lead_stage') == 'new' ? 'selected' : '' }}>New</option>
                         <option value="quotation_sent" {{ old('lead_stage') == 'quotation_sent' ? 'selected' : '' }}>Quotation Sent</option>
                         <option value="site_survey_done" {{ old('lead_stage') == 'site_survey_done' ? 'selected' : '' }}>Site Survey Done</option>
                         <option value="solar_documents_collected" {{ old('lead_stage') == 'solar_documents_collected' ? 'selected' : '' }}>Solar Documents Collected</option>
@@ -103,8 +101,8 @@
                 </div>
             </div>
 
-            <!-- Follow-up Fields (shown for interested, partially_interested, not_reachable, not_answered) -->
-            <div id="followUpFields" style="display: none;" class="mt-4">
+            <!-- Follow-up Fields (always visible) -->
+            <div id="followUpFields" class="mt-4">
                 <div class="bg-yellow-50 border border-yellow-200 rounded-md p-4">
                     <h4 class="text-sm font-medium text-yellow-800 mb-3">Follow-up Information</h4>
                     <div class="mb-2">
@@ -114,12 +112,12 @@
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label for="follow_up_date" class="block text-sm font-medium text-gray-700 mb-1">Follow-up Date</label>
-                            <input type="date" id="follow_up_date" name="follow_up_date" value="{{ old('follow_up_date') }}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500">
+                            <label for="follow_up_date" class="block text-sm font-medium text-gray-700 mb-1">Follow-up Date <span class="text-red-600">*</span></label>
+                            <input type="date" id="follow_up_date" name="follow_up_date" value="{{ old('follow_up_date') }}" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500">
                         </div>
                         <div>
-                            <label for="follow_up_notes" class="block text-sm font-medium text-gray-700 mb-1">Follow-up Notes</label>
-                            <textarea id="follow_up_notes" name="follow_up_notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500" placeholder="Add notes for follow-up call or message...">{{ old('follow_up_notes') }}</textarea>
+                            <label for="follow_up_notes" class="block text-sm font-medium text-gray-700 mb-1">Follow-up Notes <span class="text-red-600">*</span></label>
+                            <textarea id="follow_up_notes" name="follow_up_notes" rows="2" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500" placeholder="Add notes for follow-up call or message...">{{ old('follow_up_notes') }}</textarea>
                         </div>
                     </div>
                 </div>
@@ -402,35 +400,6 @@ function showPincodeMessage(message, type) {
         }
     }, 3000);
 }
-</script>
-<script>
-function toggleFollowUpFields() {
-    const statusSelect = document.querySelector('select[name="status"]');
-    const followUpFields = document.getElementById('followUpFields');
-    const followUpDateInput = document.getElementById('follow_up_date');
-    const needsFollowUp = ['interested', 'partially_interested', 'not_reachable', 'not_answered'];
-    
-    if (statusSelect && needsFollowUp.includes(statusSelect.value)) {
-        followUpFields.style.display = 'block';
-        
-        // Auto-set follow-up date to 10 days from now for INTERESTED and PARTIALLY INTERESTED
-        if (['interested', 'partially_interested'].includes(statusSelect.value)) {
-            const today = new Date();
-            today.setDate(today.getDate() + 10);
-            const dateString = today.toISOString().split('T')[0];
-            if (!followUpDateInput.value) {
-                followUpDateInput.value = dateString;
-            }
-        }
-    } else {
-        followUpFields.style.display = 'none';
-    }
-}
-
-// Check on page load
-document.addEventListener('DOMContentLoaded', function() {
-    toggleFollowUpFields();
-});
 </script>
 @endsection
 

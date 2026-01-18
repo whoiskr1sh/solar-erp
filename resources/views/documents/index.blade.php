@@ -138,7 +138,6 @@
                     <tr>
                         <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/3">Document</th>
                         <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">Category</th>
-                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">Size</th>
                         <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">Status</th>
                         <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Related To</th>
                         <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">Created</th>
@@ -150,33 +149,26 @@
                         <tr class="hover:bg-gray-50">
                             <td class="px-3 py-4">
                                 <div class="flex items-center">
-                                    <div class="mr-2">{!! $document->getFileIconAttribute() ?? '<svg class="w-8 h-8 text-gray-500" fill="currentColor" viewBox="0 0 20 20"><path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"/></svg>' !!}</div>
                                     <div class="min-w-0 flex-1">
-                                        <div class="text-sm font-medium text-gray-900 truncate">{{ $document->title }}</div>
-                                        <div class="text-xs text-gray-500 truncate">{{ $document->file_name }}</div>
+                                        <div class="text-sm font-medium text-gray-900 truncate">{{ $document->name }}</div>
+                                        <div class="text-xs text-gray-500 truncate">{{ $document->category }}</div>
                                     </div>
                                 </div>
                             </td>
                             <td class="px-3 py-4">
-                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {{ $document->category_badge ?? 'bg-gray-100 text-gray-800' }}">
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
                                     {{ ucfirst(str_replace('_', ' ', $document->category)) }}
                                 </span>
                             </td>
-                            <td class="px-3 py-4 text-sm text-gray-900">
-                                {{ $document->getFileSizeFormattedAttribute() ?? '0 B' }}
-                            </td>
                             <td class="px-3 py-4">
-                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {{ $document->status_badge ?? 'bg-gray-100 text-gray-800' }}">
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
                                     {{ ucfirst($document->status) }}
                                 </span>
                             </td>
                             <td class="px-3 py-4 text-sm text-gray-900">
-                                @if($document->lead)
-                                    <div class="text-sm text-gray-900 truncate">{{ $document->lead->name }}</div>
+                                @if($document->lead_id && $leads->where('id', $document->lead_id)->first())
+                                    <div class="text-sm text-gray-900 truncate">{{ $leads->where('id', $document->lead_id)->first()->name }}</div>
                                     <div class="text-xs text-gray-500">Lead</div>
-                                @elseif($document->project)
-                                    <div class="text-sm text-gray-900 truncate">{{ $document->project->name }}</div>
-                                    <div class="text-xs text-gray-500">Project</div>
                                 @else
                                     <span class="text-sm text-gray-500">-</span>
                                 @endif
@@ -186,20 +178,14 @@
                             </td>
                             <td class="px-3 py-4 text-sm font-medium">
                                 <div class="flex flex-col space-y-1">
-                                    <a href="{{ route('documents.show', $document) }}" class="text-teal-600 hover:text-teal-900 text-xs">View</a>
-                                    <a href="{{ route('documents.download', $document) }}" class="text-blue-600 hover:text-blue-900 text-xs">Download</a>
-                                    <a href="{{ route('documents.edit', $document) }}" class="text-green-600 hover:text-green-900 text-xs">Edit</a>
-                                    <form method="POST" action="{{ route('documents.destroy', $document) }}" class="inline" onsubmit="return confirm('Are you sure you want to delete this document?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="text-red-600 hover:text-red-900 text-xs">Delete</button>
-                                    </form>
+                                    <a href="{{ asset('storage/' . $document->path) }}" target="_blank" class="text-teal-600 hover:text-teal-900 text-xs">View</a>
+                                    <a href="{{ asset('storage/' . $document->path) }}" download class="text-blue-600 hover:text-blue-900 text-xs">Download</a>
                                 </div>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="px-3 py-4 text-center text-gray-500">No documents found</td>
+                            <td colspan="6" class="px-3 py-4 text-center text-gray-500">No documents found</td>
                         </tr>
                     @endforelse
                 </tbody>

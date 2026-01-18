@@ -113,69 +113,31 @@ class AuthController extends Controller
     {
         $user = Auth::user();
         
+
         if ($user) {
+            $today = now();
+            $isWeekend = $today->isSaturday() || $today->isSunday();
+
             // Check for incomplete todos (pending/in_progress)
             $incompleteTodos = Todo::forUser($user->id)
-                ->where(function($query) {
-                    $query->where('task_date', now()->toDateString())
-                          ->orWhere(function($q) {
-                              $q->where('task_date', '<', now()->toDateString())
-                                ->whereIn('status', ['pending', 'in_progress'])
-                                ->where('is_carried_over', true);
-                          });
-                })
+                ->where('task_date', $today->toDateString())
                 ->whereIn('status', ['pending', 'in_progress'])
-                ->count();
+                ->get();
 
-            // Check for not_completed todos without reason
-            $notCompletedWithoutReason = Todo::forUser($user->id)
-                ->where(function($query) {
-                    $query->where('task_date', now()->toDateString())
-                          ->orWhere(function($q) {
-                              $q->where('task_date', '<', now()->toDateString())
-                                ->where('status', 'not_completed')
-                                ->where('is_carried_over', true);
-                          });
-                })
-                ->where('status', 'not_completed')
-                ->where(function($q) {
-                    $q->whereNull('not_completed_reason')
-                      ->orWhere('not_completed_reason', '');
-                })
-                ->count();
-
-            // Check for completed todos without remarks
-            $completedWithoutRemarks = Todo::forUser($user->id)
-                ->where(function($query) {
-                    $query->where('task_date', now()->toDateString())
-                          ->orWhere(function($q) {
-                              $q->where('task_date', '<', now()->toDateString())
-                                ->where('status', 'completed');
-                          });
-                })
-                ->where('status', 'completed')
-                ->where(function($q) {
-                    $q->whereNull('remarks')
-                      ->orWhere('remarks', '');
-                })
-                ->count();
-
-            $errorMessages = [];
-            
-            if ($incompleteTodos > 0) {
-                $errorMessages[] = "You have {$incompleteTodos} incomplete task(s). Please update their status before logging out.";
-            }
-            
-            if ($notCompletedWithoutReason > 0) {
-                $errorMessages[] = "You have {$notCompletedWithoutReason} not completed task(s) without reason. Please provide a reason for not completing them.";
-            }
-            
-            if ($completedWithoutRemarks > 0) {
-                $errorMessages[] = "You have {$completedWithoutRemarks} completed task(s) without remarks. Please add remarks for completed tasks.";
+            // Carry forward today's incomplete tasks to tomorrow (if logging out on a weekday)
+            if ($incompleteTodos->count() > 0 && !$isWeekend) {
+                $tomorrow = $today->copy()->addDay()->toDateString();
+                foreach ($incompleteTodos as $todo) {
+                    $todo->update([
+                        'task_date' => $tomorrow,
+                        'is_carried_over' => true,
+                    ]);
+                }
             }
 
-            if (!empty($errorMessages)) {
-                return back()->with('error', implode(' ', $errorMessages));
+            // On Saturday or Sunday, block logout if any incomplete tasks remain
+            if ($isWeekend && $incompleteTodos->count() > 0) {
+                return back()->with('error', 'You cannot logout on Saturday or Sunday until all your tasks for today are completed.');
             }
         }
 

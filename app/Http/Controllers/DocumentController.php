@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Document;
+use App\Models\ClientDocument;
 use App\Models\Lead;
 use App\Models\Project;
 use Illuminate\Support\Facades\Auth;
@@ -14,11 +15,7 @@ class DocumentController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Document::with(['lead', 'project', 'creator']);
-
-        // Show all documents (active and draft) to authenticated users
-        // Hide only deleted documents
-        $query->whereIn('status', ['active', 'draft', 'archived']);
+        $query = ClientDocument::query();
 
         // Filters
         if ($request->filled('category')) {
@@ -30,28 +27,23 @@ class DocumentController extends Controller
         if ($request->filled('lead_id')) {
             $query->where('lead_id', $request->lead_id);
         }
-        if ($request->filled('project_id')) {
-            $query->where('project_id', $request->project_id);
-        }
         if ($request->filled('search')) {
             $query->where(function($q) use ($request) {
-                $q->where('title', 'like', '%' . $request->search . '%')
-                  ->orWhere('description', 'like', '%' . $request->search . '%')
-                  ->orWhere('file_name', 'like', '%' . $request->search . '%');
+                $q->where('name', 'like', '%' . $request->search . '%');
             });
         }
 
         $documents = $query->latest()->paginate(15);
         $leads = Lead::all();
         $projects = Project::where('status', '!=', 'cancelled')->get();
-        
+
         $stats = [
-            'total' => Document::whereIn('status', ['active', 'draft', 'archived'])->count(),
-            'active' => Document::where('status', 'active')->count(),
-            'draft' => Document::where('status', 'draft')->count(),
-            'archived' => Document::where('status', 'archived')->count(),
-            'total_size' => Document::whereIn('status', ['active', 'draft', 'archived'])->sum('file_size'),
-            'by_category' => Document::whereIn('status', ['active', 'draft', 'archived'])->selectRaw('category, count(*) as count')
+            'total' => ClientDocument::count(),
+            'active' => ClientDocument::where('status', 'active')->count(),
+            'draft' => ClientDocument::where('status', 'draft')->count(),
+            'archived' => ClientDocument::where('status', 'archived')->count(),
+            'total_size' => 0, // Not tracked in client_documents
+            'by_category' => ClientDocument::selectRaw('category, count(*) as count')
                 ->groupBy('category')
                 ->get(),
         ];

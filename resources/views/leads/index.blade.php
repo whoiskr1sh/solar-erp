@@ -15,9 +15,7 @@
         </div>
         <div class="mt-4 sm:mt-0 flex space-x-3">
             @php
-                // Get leads where user has viewed the contact number
-                $viewedLeadIds = \App\Models\LeadContactView::where('user_id', auth()->id())->pluck('lead_id')->toArray();
-                $assignedLeadsCount = count($viewedLeadIds);
+                $assignedLeadsCount = isset($viewedLeadIds) ? count($viewedLeadIds) : 0;
                 $isUnavailable = !auth()->user()->isAvailableForFollowup();
                 $hasPendingRequest = \App\Models\LeadReassignmentRequest::where('requested_by', auth()->id())
                     ->whereIn('status', ['pending_manager_approval', 'pending_admin_approval'])
@@ -341,17 +339,137 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{{ $lead->phone ?? 'N/A' }}</td>
-                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{{ $lead->email ?? 'N/A' }}</td>
-                                <td class="px-4 py-3 whitespace-nowrap">
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $lead->status_badge }}">
-                                        {{ $lead->status_label }}
-                                    </span>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                    @php 
+                                        $isSuperAdmin = auth()->user()->hasRole('SUPER ADMIN');
+                                        $isAssignedUser = $lead->assigned_user_id == auth()->id();
+                                        $isUnassigned = $lead->assigned_user_id === null;
+                                    @endphp
+                                    @if($isSuperAdmin)
+                                        <span class="text-gray-900">{{ $lead->phone ?? 'N/A' }}</span>
+                                    @elseif($isAssignedUser)
+                                        <span class="text-gray-900">{{ $lead->phone ?? 'N/A' }}</span>
+                                    @elseif($isUnassigned)
+                                        <form method="POST" action="{{ route('leads.reveal-contact', $lead->id) }}" style="display:inline" onsubmit="revealContact(event, {{ $lead->id }}, '{{ csrf_token() }}', '{{ route('leads.reveal-contact', $lead->id) }}', 'phone-blur-{{ $lead->id }}', '')">
+                                            @csrf
+                                            <span id="phone-blur-{{ $lead->id }}" style="filter: blur(4px); -webkit-filter: blur(4px);">Contact hidden</span>
+                                            <button type="submit" class="ml-1 cursor-pointer bg-transparent border-none p-0" style="background:none;outline:none;" title="Show phone">👁️</button>
+                                        </form>
+                                    @else
+                                        <span class="text-gray-400 italic">Contact restricted</span>
+                                    @endif
+                                </td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                    @php 
+                                        $isSuperAdmin = auth()->user()->hasRole('SUPER ADMIN');
+                                        $isAssignedUser = $lead->assigned_user_id == auth()->id();
+                                        $isUnassigned = $lead->assigned_user_id === null;
+                                    @endphp
+                                    @if($isSuperAdmin)
+                                        <span class="text-gray-900" id="email-blur-{{ $lead->id }}">{{ $lead->email ?? 'N/A' }}</span>
+                                    @elseif($isAssignedUser)
+                                        <span class="text-gray-900" id="email-blur-{{ $lead->id }}">{{ $lead->email ?? 'N/A' }}</span>
+                                    @elseif($isUnassigned)
+                                        <form method="POST" action="{{ route('leads.reveal-contact', $lead->id) }}" style="display:inline" onsubmit="revealContact(event, {{ $lead->id }}, '{{ csrf_token() }}', '{{ route('leads.reveal-contact', $lead->id) }}', 'email-blur-{{ $lead->id }}', '')">
+                                            @csrf
+                                            <span id="email-blur-{{ $lead->id }}" style="filter: blur(4px); -webkit-filter: blur(4px);">Contact hidden</span>
+                                            <button type="submit" class="ml-1 cursor-pointer bg-transparent border-none p-0" style="background:none;outline:none;" title="Show email">👁️</button>
+                                        </form>
+                                    @else
+                                        <span class="text-gray-400 italic">Contact restricted</span>
+                                    @endif
                                 </td>
                                 <td class="px-4 py-3 whitespace-nowrap">
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $lead->lead_stage_badge }}">
-                                        {{ $lead->lead_stage_label }}
-                                    </span>
+                                    @php
+                                        $isAssignedUser = $lead->assigned_user_id == auth()->id();
+                                    @endphp
+                                    @if($isAssignedUser)
+                                        <form method="POST" action="{{ route('leads.updateStatus', $lead->id) }}" class="inline">
+                                            @csrf
+                                            @method('PATCH')
+                                            <select name="status" onchange="this.form.submit()" class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium border-gray-300 focus:ring-teal-500 focus:border-teal-500 {{ $lead->status_badge }}">
+                                                <option value="interested" {{ $lead->status == 'interested' ? 'selected' : '' }}>Interested</option>
+                                                <option value="partially_interested" {{ $lead->status == 'partially_interested' ? 'selected' : '' }}>Partially Interested</option>
+                                                <option value="not_interested" {{ $lead->status == 'not_interested' ? 'selected' : '' }}>Not Interested</option>
+                                                <option value="not_reachable" {{ $lead->status == 'not_reachable' ? 'selected' : '' }}>Not Reachable</option>
+                                                <option value="not_answered" {{ $lead->status == 'not_answered' ? 'selected' : '' }}>Not Answered</option>
+                                            </select>
+                                        </form>
+                                        @if($lead->needsFollowUp())
+                                            @if($lead->isFollowUpOverdue())
+                                                <span class="inline-flex items-center px-1 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 mt-1">
+                                                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                                                </svg>
+                                                Overdue
+                                            </span>
+                                            @else
+                                                <span class="inline-flex items-center px-1 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 mt-1">
+                                                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"/>
+                                                    </svg>
+                                                    Follow-up Needed
+                                                </span>
+                                            @endif
+                                            @if($lead->follow_up_date)
+                                                <span class="text-xs {{ $lead->isFollowUpOverdue() ? 'text-red-600 font-semibold' : 'text-gray-500' }} mt-0.5">
+                                                    Due: {{ $lead->follow_up_date->format('M d, Y') }}
+                                                </span>
+                                            @endif
+                                        @elseif(in_array($lead->status, ['interested', 'partially_interested']) && $lead->follow_up_date)
+                                            <span class="text-xs text-blue-600 mt-1">
+                                                Follow-up: {{ $lead->follow_up_date->format('M d, Y') }}
+                                            </span>
+                                        @endif
+                                    @else
+                                        <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium border-gray-300 {{ $lead->status_badge }}">{{ ucfirst(str_replace('_', ' ', $lead->status)) }}</span>
+                                        @if($lead->needsFollowUp())
+                                            @if($lead->isFollowUpOverdue())
+                                                <span class="inline-flex items-center px-1 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 mt-1">
+                                                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                                                </svg>
+                                                Overdue
+                                            </span>
+                                            @else
+                                                <span class="inline-flex items-center px-1 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 mt-1">
+                                                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"/>
+                                                    </svg>
+                                                    Follow-up Needed
+                                                </span>
+                                            @endif
+                                            @if($lead->follow_up_date)
+                                                <span class="text-xs {{ $lead->isFollowUpOverdue() ? 'text-red-600 font-semibold' : 'text-gray-500' }} mt-0.5">
+                                                    Due: {{ $lead->follow_up_date->format('M d, Y') }}
+                                                </span>
+                                            @endif
+                                        @elseif(in_array($lead->status, ['interested', 'partially_interested']) && $lead->follow_up_date)
+                                            <span class="text-xs text-blue-600 mt-1">
+                                                Follow-up: {{ $lead->follow_up_date->format('M d, Y') }}
+                                            </span>
+                                        @endif
+                                    @endif
+                                </td>
+                                <td class="px-4 py-3 whitespace-nowrap">
+                                    @if($lead->assigned_user_id == auth()->id())
+                                        <form method="POST" action="{{ route('leads.updateStage', $lead->id) }}" class="inline">
+                                            @csrf
+                                            @method('PATCH')
+                                            <select name="lead_stage" onchange="this.form.submit()" class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium border-gray-300 focus:ring-teal-500 focus:border-teal-500 {{ $lead->lead_stage_badge }}">
+                                                <option value="not_set" {{ $lead->lead_stage == 'not_set' ? 'selected' : '' }}>Not Set</option>
+                                                <option value="new" {{ $lead->lead_stage == 'new' ? 'selected' : '' }}>New</option>
+                                                <option value="contacted" {{ $lead->lead_stage == 'contacted' ? 'selected' : '' }}>Contacted</option>
+                                                <option value="qualified" {{ $lead->lead_stage == 'qualified' ? 'selected' : '' }}>Qualified</option>
+                                                <option value="proposal_sent" {{ $lead->lead_stage == 'proposal_sent' ? 'selected' : '' }}>Proposal Sent</option>
+                                                <option value="negotiation" {{ $lead->lead_stage == 'negotiation' ? 'selected' : '' }}>Negotiation</option>
+                                                <option value="won" {{ $lead->lead_stage == 'won' ? 'selected' : '' }}>Won</option>
+                                                <option value="lost" {{ $lead->lead_stage == 'lost' ? 'selected' : '' }}>Lost</option>
+                                            </select>
+                                        </form>
+                                    @else
+                                        <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium border-gray-300">{{ ucfirst(str_replace('_', ' ', $lead->lead_stage ?? 'Not Set')) }}</span>
+                                    @endif
                                 </td>
                                 <td class="px-4 py-3 whitespace-nowrap">
                                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $lead->priority_badge }}">
@@ -395,7 +513,7 @@
                             @endif
                             <th class="w-20 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source</th>
                             <th class="w-20 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                            <th class="w-24 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lead Stage</th>
+                            <th class="w-32 max-w-xs px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lead Stage</th>
                             <th class="w-20 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created By</th>
                             <th class="w-16 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
                             <th class="w-20 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
@@ -438,7 +556,7 @@
                                     {{-- Super Admin - show contact directly without blur --}}
                                     <div class="text-xs">
                                         <div class="text-gray-900 truncate" title="{{ $lead->phone }}">{{ Str::limit($lead->phone, 12) }}</div>
-                                        <div class="text-xs text-gray-500 truncate" title="{{ $lead->email ?? 'No Email' }}">{{ Str::limit($lead->email ?? 'No Email', 12) }}</div>
+                                        <div class="text-xs text-gray-400 italic">Contact restricted</div>
                                     </div>
                                 @elseif($canViewContact && !$hasViewedContact)
                                     {{-- Blurred contact - can be clicked to reveal (for assigned user, admin/manager, or unassigned leads) --}}
@@ -454,7 +572,24 @@
                                             </span>
                                             <span class="text-xs text-blue-600 ml-1 cursor-pointer" title="Click to reveal{{ $isUnassigned ? ' (will assign lead to you)' : '' }}" onclick="revealContact({{ $lead->id }}, document.getElementById('phone-blur-{{ $lead->id }}'))">👁️</span>
                                         </div>
-                                        <div class="text-xs text-gray-500 truncate mt-1" title="{{ $lead->email ?? 'No Email' }}">{{ Str::limit($lead->email ?? 'No Email', 12) }}</div>
+                                        @php $isAssignedUser = $lead->assigned_user_id == auth()->id(); @endphp
+                                        @if($isAssignedUser)
+                                            <div class="text-xs text-gray-900 truncate mt-1 flex items-center">
+                                                @if($isAssignedUser)
+                                                    <span class="text-gray-400 italic">Contact restricted</span>
+                                                @elseif($lead->assigned_user_id === null)
+                                                    <form method="POST" action="{{ route('leads.reveal-contact', $lead->id) }}" style="display:inline">
+                                                        @csrf
+                                                        <span class="text-gray-400 italic">Contact restricted</span>
+                                                        <button type="submit" class="ml-1 cursor-pointer bg-transparent border-none p-0" style="background:none;outline:none;" title="Show email">👁️</button>
+                                                    </form>
+                                                @else
+                                                    <span class="text-gray-400 italic">Contact restricted</span>
+                                                @endif
+                                            </div>
+                                        @else
+                                            <div class="text-xs text-gray-400 italic mt-1">Contact restricted</div>
+                                        @endif
                                         @if($isUnassigned)
                                             <div class="text-xs text-orange-600 mt-1 italic">Unassigned - Click to claim</div>
                                         @endif
@@ -463,7 +598,12 @@
                                     {{-- Already viewed - show normally with viewer name --}}
                                     <div class="text-xs">
                                         <div class="text-gray-900 truncate" title="{{ $lead->phone }}">{{ Str::limit($lead->phone, 12) }}</div>
-                                        <div class="text-xs text-gray-500 truncate" title="{{ $lead->email ?? 'No Email' }}">{{ Str::limit($lead->email ?? 'No Email', 12) }}</div>
+                                        @php $isAssignedUser = $lead->assigned_user_id == auth()->id(); @endphp
+                                        @if($isAssignedUser)
+                                            <div class="text-xs text-gray-900 truncate" title="Email revealed">Email revealed</div>
+                                        @else
+                                            <div class="text-xs text-gray-400 italic">Contact restricted</div>
+                                        @endif
                                         @if($contactViewer)
                                             <div class="text-xs text-blue-600 mt-1" title="Viewed by {{ $contactViewer['user_name'] }} on {{ $contactViewer['viewed_at'] ? \Carbon\Carbon::parse($contactViewer['viewed_at'])->format('M d, Y g:i A') : 'N/A' }}">
                                                 👁️ Viewed by {{ Str::limit($contactViewer['user_name'], 15) }}
@@ -524,42 +664,70 @@
                                 </span>
                             </td>
                             <td class="px-3 py-3 whitespace-nowrap">
-                                <div class="flex flex-col">
-                                    <span class="inline-flex items-center px-1 py-0.5 rounded-full text-xs font-medium {{ $lead->status_badge }}">
-                                        {{ $lead->status_label }}
-                                    </span>
-                                    @if($lead->needsFollowUp())
-                                        @if($lead->isFollowUpOverdue())
-                                            <span class="inline-flex items-center px-1 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 mt-1">
-                                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
-                                                </svg>
-                                                Overdue
-                                            </span>
+                                <div class="flex flex-col space-y-1">
+                                    <div>
+                                        @if($lead->assigned_user_id == auth()->id())
+                                            <form method="POST" action="{{ route('leads.updateStatus', $lead->id) }}" class="inline">
+                                                @csrf
+                                                @method('PATCH')
+                                                <select name="status" onchange="this.form.submit()" class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium border-gray-300 focus:ring-teal-500 focus:border-teal-500 {{ $lead->status_badge }}">
+                                                    <option value="interested" {{ $lead->status == 'interested' ? 'selected' : '' }}>Interested</option>
+                                                    <option value="partially_interested" {{ $lead->status == 'partially_interested' ? 'selected' : '' }}>Partially Interested</option>
+                                                    <option value="not_interested" {{ $lead->status == 'not_interested' ? 'selected' : '' }}>Not Interested</option>
+                                                    <option value="not_reachable" {{ $lead->status == 'not_reachable' ? 'selected' : '' }}>Not Reachable</option>
+                                                    <option value="not_answered" {{ $lead->status == 'not_answered' ? 'selected' : '' }}>Not Answered</option>
+                                                </select>
+                                            </form>
                                         @else
-                                            <span class="inline-flex items-center px-1 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 mt-1">
-                                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"/>
-                                                </svg>
-                                                Follow-up Needed
+                                            <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium border-gray-300 {{ $lead->status_badge }}">{{ ucfirst(str_replace('_', ' ', $lead->status)) }}</span>
+                                        @endif
+                                    </div>
+                                    <div>
+                                        @if($lead->needsFollowUp())
+                                            @if($lead->isFollowUpOverdue())
+                                                <span class="inline-flex items-center px-1 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                                                    </svg>
+                                                    Overdue
+                                                </span>
+                                            @else
+                                                <span class="inline-flex items-center px-1 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"/>
+                                                    </svg>
+                                                    Follow-up Needed
+                                                </span>
+                                            @endif
+                                            @if($lead->follow_up_date)
+                                                <span class="text-xs {{ $lead->isFollowUpOverdue() ? 'text-red-600 font-semibold' : 'text-gray-500' }} block">
+                                                    Due: {{ $lead->follow_up_date->format('M d, Y') }}
+                                                </span>
+                                            @endif
+                                        @elseif(in_array($lead->status, ['interested', 'partially_interested']) && $lead->follow_up_date)
+                                            <span class="text-xs text-blue-600 block">
+                                                Follow-up: {{ $lead->follow_up_date->format('M d, Y') }}
                                             </span>
                                         @endif
-                                        @if($lead->follow_up_date)
-                                            <span class="text-xs {{ $lead->isFollowUpOverdue() ? 'text-red-600 font-semibold' : 'text-gray-500' }} mt-0.5">
-                                                Due: {{ $lead->follow_up_date->format('M d, Y') }}
-                                            </span>
-                                        @endif
-                                    @elseif(in_array($lead->status, ['interested', 'partially_interested']) && $lead->follow_up_date)
-                                        <span class="text-xs text-blue-600 mt-1">
-                                            Follow-up: {{ $lead->follow_up_date->format('M d, Y') }}
-                                        </span>
-                                    @endif
+                                    </div>
                                 </div>
                             </td>
                             <td class="px-3 py-3 whitespace-nowrap">
-                                <span class="inline-flex items-center px-1 py-0.5 rounded-full text-xs font-medium {{ $lead->lead_stage_badge }}">
-                                    {{ $lead->lead_stage_label }}
-                                </span>
+                                @if($lead->assigned_user_id == auth()->id())
+                                    <form method="POST" action="{{ route('leads.updateStage', $lead->id) }}" class="inline">
+                                        @csrf
+                                        @method('PATCH')
+                                        <select name="lead_stage" onchange="this.form.submit()" class="inline-flex px-1 py-0.5 rounded-full text-xs font-medium border-gray-300 focus:ring-teal-500 focus:border-teal-500 min-w-0 w-auto {{ $lead->lead_stage_badge }}">
+                                            <option value="not_set" {{ $lead->lead_stage == 'not_set' ? 'selected' : '' }}>Not Set</option>
+                                            <option value="quotation_sent" {{ $lead->lead_stage == 'quotation_sent' ? 'selected' : '' }}>QUOTATION SENT</option>
+                                            <option value="site_survey" {{ $lead->lead_stage == 'site_survey' ? 'selected' : '' }}>SITE SURVEY</option>
+                                            <option value="document_collected" {{ $lead->lead_stage == 'document_collected' ? 'selected' : '' }}>DOCUMENT COLLECTED</option>
+                                            <option value="loan_document_collected" {{ $lead->lead_stage == 'loan_document_collected' ? 'selected' : '' }}>LOAN DOCUMENT COLLECTED</option>
+                                        </select>
+                                    </form>
+                                @else
+                                    <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium border-gray-300">{{ ucfirst(str_replace('_', ' ', $lead->lead_stage ?? 'Not Set')) }}</span>
+                                @endif
                             </td>
                             <td class="px-3 py-3 whitespace-nowrap">
                                 <span class="inline-flex items-center px-1 py-0.5 rounded-full text-xs font-medium {{ $lead->priority_badge }}">
@@ -592,49 +760,54 @@
                                     <a href="{{ route('leads.show', $lead) }}#quotations" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
                                         {{ $quotationCount }} {{ Str::plural('Quotation', $quotationCount) }}
                                     </a>
-                                @else
-                                    <a href="{{ route('quotations.create', ['client_id' => $lead->id]) }}" class="inline-flex items-center px-3 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors duration-200 border border-blue-200">
-                                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                                        </svg>
-                                        Create
-                                    </a>
                                 @endif
+                                <a href="{{ route('quotations.create', ['client_id' => $lead->id]) }}" class="inline-flex items-center px-3 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors duration-200 border border-blue-200 ml-2">
+                                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                    </svg>
+                                    Create
+                                </a>
                             </td>
                             <td class="px-3 py-3 whitespace-nowrap text-xs">
-                                @php $revisedCount = $lead->revised_quotations_count ?? 0; @endphp
-                                @if($revisedCount > 0)
-                                    <a href="{{ route('leads.show', $lead) }}#quotations" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-pink-100 text-pink-800">
-                                        {{ $revisedCount }} {{ Str::plural('Revision', $revisedCount) }}
+                                @if($lead->selectedRevisedQuotation)
+                                    <a href="{{ route('quotations.show', $lead->selectedRevisedQuotation) }}" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-pink-100 text-pink-800" target="_blank">
+                                        {{ $lead->selectedRevisedQuotation->quotation_number }} (Revised)
                                     </a>
                                 @else
-                                    @php 
-                                        $existingQuotations = \App\Models\Quotation::where('client_id', $lead->id)
-                                            ->where('is_revision', false)
-                                            ->orWhere(function($q) use ($lead) {
-                                                $q->where('client_id', $lead->id)
-                                                  ->whereNull('parent_quotation_id');
-                                            })
-                                            ->distinct('id')
-                                            ->get()
-                                            ->unique('id');
-                                    @endphp
-                                    @if($existingQuotations->count() > 0)
-                                        <button type="button" onclick="openSelectQuotationModal({{ $lead->id }}, '{{ $lead->name }}')" class="inline-flex items-center px-3 py-1 rounded-md text-xs font-medium bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors duration-200 border border-amber-200">
-                                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                                            </svg>
-                                            Select
-                                        </button>
+                                    @php $revisedCount = $lead->revised_quotations_count ?? 0; @endphp
+                                    @if($revisedCount > 0)
+                                        <a href="{{ route('leads.show', $lead) }}#quotations" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-pink-100 text-pink-800">
+                                            {{ $revisedCount }} {{ Str::plural('Revision', $revisedCount) }}
+                                        </a>
                                     @else
-                                        <span class="text-gray-400 text-xs">No Quotations</span>
+                                        @php 
+                                            $existingQuotations = \App\Models\Quotation::where('client_id', $lead->id)
+                                                ->where('is_revision', false)
+                                                ->orWhere(function($q) use ($lead) {
+                                                    $q->where('client_id', $lead->id)
+                                                      ->whereNull('parent_quotation_id');
+                                                })
+                                                ->distinct('id')
+                                                ->get()
+                                                ->unique('id');
+                                        @endphp
+                                        @if($existingQuotations->count() > 0)
+                                            <button type="button" onclick="openSelectQuotationModal({{ $lead->id }}, '{{ $lead->name }}')" class="inline-flex items-center px-3 py-1 rounded-md text-xs font-medium bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors duration-200 border border-amber-200">
+                                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                                </svg>
+                                                Select
+                                            </button>
+                                        @else
+                                            <span class="text-gray-400 text-xs">No Quotations</span>
+                                        @endif
                                     @endif
                                 @endif
                             </td>
                             <td class="px-3 py-3 whitespace-nowrap text-sm font-medium">
                                 <div class="flex items-center space-x-1">
                                     <a href="{{ route('leads.show', $lead) }}" class="text-teal-600 hover:text-teal-900 text-xs leading-none">View</a>
-                                    <a href="{{ route('leads.edit', $lead) }}" class="text-indigo-600 hover:text-indigo-900 text-xs leading-none">Edit</a>
+                                    <a href="{{ route('leads.documents', $lead) }}" class="text-blue-600 hover:text-blue-900 text-xs leading-none font-semibold">UPLOAD DOCUMENT</a>
                                     @if($lead->status === 'not_reachable')
                                         <button type="button" onclick="openDeleteModal({{ $lead->id }}, '{{ $lead->name }}', {{ (in_array($lead->priority, ['high', 'urgent']) || ($lead->estimated_value && $lead->estimated_value >= 100000)) ? 'true' : 'false' }})" class="text-red-600 hover:text-red-900 text-xs leading-none bg-transparent border-none p-0">Delete</button>
                                     @endif
@@ -763,12 +936,10 @@ function revealContact(leadId, element) {
     if (element.getAttribute('data-revealed') === 'true') {
         return;
     }
-    
     // Prevent multiple clicks
     element.style.pointerEvents = 'none';
     element.style.cursor = 'wait';
     element.style.opacity = '0.6';
-    
     // Make AJAX request to reveal contact
     fetch(`/leads/${leadId}/reveal-contact`, {
         method: 'POST',
@@ -779,104 +950,26 @@ function revealContact(leadId, element) {
         },
         body: JSON.stringify({})
     })
-    .then(response => {
-        // Check if response is ok
-        if (!response.ok) {
-            return response.json().then(err => {
-                throw new Error(err.error || 'Failed to reveal contact number.');
-            });
-        }
-        return response.json();
-    })
+    .then(response => response.json())
     .then(data => {
         if (data.success && data.phone) {
-            // Get the contact container by ID
             const contactContainer = document.getElementById('contact-container-' + leadId);
             if (contactContainer) {
-                // Get the email from the current container - try multiple selectors
-                let emailElement = contactContainer.querySelector('.text-xs.text-gray-500');
-                if (!emailElement) {
-                    emailElement = contactContainer.querySelector('div.text-gray-500');
-                }
-                const email = emailElement ? (emailElement.getAttribute('title') || emailElement.textContent.trim() || 'No Email') : 'No Email';
-                
-                // Build viewer info HTML
-                let viewerInfo = '';
-                if (data.viewer_name) {
-                    const viewerName = data.viewer_name.length > 15 ? data.viewer_name.substring(0, 15) + '...' : data.viewer_name;
-                    const viewedAt = data.viewed_at || 'Just now';
-                    viewerInfo = `<div class="text-xs text-blue-600 mt-1" title="Viewed by ${data.viewer_name} on ${viewedAt}">👁️ Viewed by ${viewerName}</div>`;
-                }
-                
-                // Replace the entire blurred contact section with normal display (NO PAGE REFRESH)
-                contactContainer.innerHTML = `
-                    <div class="text-xs text-gray-900 truncate" title="${data.phone}">${data.phone.length > 12 ? data.phone.substring(0, 12) + '...' : data.phone}</div>
-                    <div class="text-xs text-gray-500 truncate" title="${email}">${email.length > 12 ? email.substring(0, 12) + '...' : email}</div>
-                    ${viewerInfo}
-                `;
-                
-                // Update "Assigned To" column if lead was assigned
-                if (data.was_assigned && data.assigned_user) {
-                    const assignedToCell = document.getElementById('assigned-to-' + leadId);
-                    if (assignedToCell) {
-                        const assignedUserName = data.assigned_user.name.length > 15 ? data.assigned_user.name.substring(0, 15) + '...' : data.assigned_user.name;
-                        assignedToCell.innerHTML = `
-                            <div class="text-xs">
-                                <div class="font-medium text-gray-900 truncate" title="${data.assigned_user.name}">${assignedUserName}</div>
-                            </div>
-                        `;
-                    }
-                }
-            } else {
-                // Fallback: just update the element
-                element.style.filter = 'none';
-                element.style.webkitFilter = 'none';
-                element.classList.remove('cursor-pointer');
-                element.textContent = data.phone.length > 12 ? data.phone.substring(0, 12) + '...' : data.phone;
-                element.title = data.phone;
-                element.style.cursor = 'default';
-                element.style.opacity = '1';
-                element.setAttribute('data-revealed', 'true');
-                
-                // Remove the eye icon if it exists
-                const parent = element.parentElement;
-                const eyeIcon = Array.from(parent.children).find(child => child.textContent && child.textContent.includes('👁️'));
-                if (eyeIcon) {
-                    eyeIcon.remove();
-                }
+                contactContainer.innerHTML = `<div class="text-xs text-gray-900 truncate" title="${data.phone}">${data.phone.length > 12 ? data.phone.substring(0, 12) + '...' : data.phone}</div>`;
             }
-            
-            // Show success message (NO PAGE REFRESH - everything updates dynamically)
-            showNotification('Contact number revealed successfully!', 'success');
         } else {
-            // Show error message
-            showNotification(data.error || 'Failed to reveal contact number.', 'error');
+            alert(data.message || 'Failed to reveal contact/email.');
             element.style.pointerEvents = 'auto';
             element.style.cursor = 'pointer';
             element.style.opacity = '1';
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        showNotification(error.message || 'An error occurred while revealing the contact number.', 'error');
+        alert('Failed to reveal contact/email.');
         element.style.pointerEvents = 'auto';
         element.style.cursor = 'pointer';
         element.style.opacity = '1';
     });
-}
-
-// Simple notification function
-function showNotification(message, type) {
-    const notification = document.createElement('div');
-    notification.className = `fixed top-4 right-4 px-4 py-3 rounded-lg shadow-lg z-50 ${
-        type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
-    }`;
-    notification.textContent = message;
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-        notification.remove();
-    }, 3000);
 }
 </script>
 
@@ -911,7 +1004,7 @@ function showNotification(message, type) {
                     </p>
                 </div>
                 
-                <div class="flex justify-end space-x-3">
+                <div class="
                     <button type="button" onclick="closeDeleteModal()" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg">
                         Cancel
                     </button>
@@ -950,6 +1043,7 @@ function showNotification(message, type) {
 
 <script>
 function openSelectQuotationModal(leadId, leadName) {
+        window.currentSelectLeadId = leadId;
     const modal = document.getElementById('selectQuotationModal');
     const quotationsList = document.getElementById('quotationsList');
     const selectedLeadName = document.getElementById('selectedLeadName');
@@ -1012,8 +1106,71 @@ function closeSelectQuotationModal() {
 }
 
 function selectQuotationForRevision(quotationId) {
-    // Redirect to create revision page with the selected quotation
-    window.location.href = `/quotations/${quotationId}/create-revision`;
+    // Save the selected revised quotation for the lead via AJAX
+    if (window.currentSelectLeadId) {
+        fetch(`/api/leads/${window.currentSelectLeadId}/select-revised-quotation`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify({ quotation_id: quotationId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert('Failed to select revised quotation.');
+            }
+        })
+        .catch(() => {
+            alert('Failed to select revised quotation.');
+        });
+    }
+}
+</script>
+<script>
+function revealContact(leadId, element) {
+    // Check if already revealed
+    if (element.getAttribute('data-revealed') === 'true') {
+        return;
+    }
+    // Prevent multiple clicks
+    element.style.pointerEvents = 'none';
+    element.style.cursor = 'wait';
+    element.style.opacity = '0.6';
+    // Make AJAX request to reveal contact
+    fetch(`/leads/${leadId}/reveal-contact`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.phone) {
+            const contactContainer = document.getElementById('contact-container-' + leadId);
+            if (contactContainer) {
+                contactContainer.innerHTML = `<div class="text-xs text-gray-900 truncate" title="${data.phone}">${data.phone.length > 12 ? data.phone.substring(0, 12) + '...' : data.phone}</div>`;
+            }
+        } else {
+            alert(data.message || 'Failed to reveal contact/email.');
+            element.style.pointerEvents = 'auto';
+            element.style.cursor = 'pointer';
+            element.style.opacity = '1';
+        }
+    })
+    .catch(error => {
+        alert('Failed to reveal contact/email.');
+        element.style.pointerEvents = 'auto';
+        element.style.cursor = 'pointer';
+        element.style.opacity = '1';
+    });
 }
 </script>
 @endsection
