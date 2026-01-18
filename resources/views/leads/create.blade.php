@@ -41,16 +41,16 @@
                     @enderror
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Company</label>
-                    <input type="text" name="company" value="{{ old('company') }}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500">
-                    @error('company')
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                    <input type="email" name="email" value="{{ old('email') }}" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500">
+                    @error('email')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                    <input type="email" name="email" value="{{ old('email') }}" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500">
-                    @error('email')
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Company</label>
+                    <input type="text" name="company" value="{{ old('company') }}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500">
+                    @error('company')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
                 </div>
@@ -62,9 +62,17 @@
                     @enderror
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Consumer No <span class="text-red-500">*</span></label>
-                    <input type="text" name="consumer_number" value="{{ old('consumer_number') }}" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500">
-                    @error('consumer_number')
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Status *</label>
+                    <select name="status" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500">
+                        <option value="new" {{ old('status') == 'new' ? 'selected' : '' }}>New</option>
+                        <option value="contacted" {{ old('status') == 'contacted' ? 'selected' : '' }}>Contacted</option>
+                        <option value="qualified" {{ old('status') == 'qualified' ? 'selected' : '' }}>Qualified</option>
+                        <option value="proposal" {{ old('status') == 'proposal' ? 'selected' : '' }}>Proposal</option>
+                        <option value="negotiation" {{ old('status') == 'negotiation' ? 'selected' : '' }}>Negotiation</option>
+                        <option value="converted" {{ old('status') == 'converted' ? 'selected' : '' }}>Converted</option>
+                        <option value="lost" {{ old('status') == 'lost' ? 'selected' : '' }}>Lost</option>
+                    </select>
+                    @error('status')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
                 </div>
@@ -84,12 +92,10 @@
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
                 </div>
-                <input type="hidden" name="status" value="new">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Lead Stage *</label>
                     <select name="lead_stage" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500">
-                        <option value="">Select Lead Stage</option>
-                        <option value="new" {{ old('lead_stage') == 'new' ? 'selected' : '' }}>New</option>
+                        <option value="new" {{ old('lead_stage', 'new') == 'new' ? 'selected' : '' }}>New</option>
                         <option value="quotation_sent" {{ old('lead_stage') == 'quotation_sent' ? 'selected' : '' }}>Quotation Sent</option>
                         <option value="site_survey_done" {{ old('lead_stage') == 'site_survey_done' ? 'selected' : '' }}>Site Survey Done</option>
                         <option value="solar_documents_collected" {{ old('lead_stage') == 'solar_documents_collected' ? 'selected' : '' }}>Solar Documents Collected</option>

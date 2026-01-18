@@ -688,9 +688,9 @@
                                                 <span class="inline-flex items-center px-1 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
                                                     <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                                                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
-                                                    </svg>
-                                                    Overdue
-                                                </span>
+                                                </svg>
+                                                Overdue
+                                            </span>
                                             @else
                                                 <span class="inline-flex items-center px-1 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
                                                     <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
@@ -730,7 +730,7 @@
                                 @endif
                             </td>
                             <td class="px-3 py-3 whitespace-nowrap">
-                                <span class="inline-flex items-center px-1 py-0.5 rounded-full text-xs font-medium {{ $lead->priority_badge }}">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $lead->priority_badge }}">
                                     {{ ucfirst($lead->priority) }}
                                 </span>
                             </td>
@@ -971,6 +971,30 @@ function revealContact(leadId, element) {
         element.style.opacity = '1';
     });
 }
+
+function updateSelectedRevisedQuotation(leadId, quotationId) {
+    if (!quotationId) return;
+    fetch(`/api/leads/${leadId}/select-revised-quotation`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json',
+        },
+        body: JSON.stringify({ quotation_id: quotationId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert('Failed to select revised quotation.');
+        }
+    })
+    .catch(() => {
+        alert('Failed to select revised quotation.');
+    });
+}
 </script>
 
 <!-- Delete Lead Modal -->
@@ -1004,7 +1028,7 @@ function revealContact(leadId, element) {
                     </p>
                 </div>
                 
-                <div class="
+                <div class="flex justify-end space-x-3">
                     <button type="button" onclick="closeDeleteModal()" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg">
                         Cancel
                     </button>

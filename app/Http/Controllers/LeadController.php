@@ -16,6 +16,18 @@ use App\Imports\LeadsImport;
 use App\Services\BackupService;
 
 class LeadController extends Controller
+    /**
+     * Show documents for a specific lead
+     */
+    public function documents($leadId)
+    {
+        $lead = Lead::findOrFail($leadId);
+        // Assuming documents are stored in a related model or in the lead itself
+        // If you have a LeadDocument model, you can fetch like below:
+        // $documents = LeadDocument::where('lead_id', $leadId)->get();
+        // For now, just pass the lead to the view
+        return view('leads.documents', compact('lead'));
+    }
 {
     /**
      * Save selected revised quotation for a lead (AJAX/API)
@@ -352,10 +364,12 @@ class LeadController extends Controller
             'passport_photo',
             'site_photo_pre_installation',
             'site_photo_post_installation',
+            'status', // Remove status from request data
         ]);
         $leadData['created_by'] = Auth::id();
-        $leadData['lead_stage'] = 'new';
+        // Always set status to a valid enum value
         $leadData['status'] = 'new';
+        $leadData['lead_stage'] = 'new';
 
         // Handle mandatory attachments
         if ($request->hasFile('electricity_bill')) {
@@ -393,7 +407,8 @@ class LeadController extends Controller
         }
         
         // If status is INTERESTED or PARTIALLY INTERESTED, set follow-up date to 10 days from now
-        if (in_array($request->status, ['interested', 'partially_interested'])) {
+        // Only do this if $request->status is present and valid, but do NOT overwrite $leadData['status']
+        if (isset($request->status) && in_array($request->status, ['interested', 'partially_interested'])) {
             $leadData['follow_up_date'] = now()->addDays(10);
             $leadData['last_follow_up_at'] = now();
         }

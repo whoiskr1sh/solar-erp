@@ -18,6 +18,10 @@
 
 
     <form method="POST" action="{{ route('leads.documents.upload', $lead) }}" enctype="multipart/form-data">
+                <div class="mb-6">
+                    <label class="block font-medium mb-1">Consumer No <span class="text-red-500">*</span></label>
+                    <input type="text" name="consumer_number" value="{{ old('consumer_number', $lead->consumer_number ?? '') }}" required class="w-full border rounded px-3 py-2">
+                </div>
         @csrf
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
