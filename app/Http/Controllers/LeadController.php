@@ -17,6 +17,29 @@ use App\Services\BackupService;
 
 class LeadController extends Controller
 {
+    /**
+     * Save selected revised quotation for a lead (AJAX/API)
+     */
+    public function selectRevisedQuotation(Request $request, $leadId)
+    {
+        $request->validate([
+            'quotation_id' => 'required|exists:quotations,id',
+        ]);
+
+        $lead = Lead::find($leadId);
+        if (!$lead) {
+            return response()->json(['success' => false, 'message' => 'Lead not found.'], 404);
+        }
+
+        $lead->selected_revised_quotation_id = $request->quotation_id;
+        $lead->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Revised quotation selected successfully.',
+            'selected_revised_quotation_id' => $lead->selected_revised_quotation_id,
+        ]);
+    }
     // ...existing methods...
 
     /**
