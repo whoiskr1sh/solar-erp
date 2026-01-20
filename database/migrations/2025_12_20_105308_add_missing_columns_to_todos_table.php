@@ -12,11 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('todos', function (Blueprint $table) {
-            if (!Schema::hasColumn('todos', 'is_daily_task')) {
-                $table->boolean('is_daily_task')->default(true)->after('incomplete_reason');
-            }
-            if (!Schema::hasColumn('todos', 'completion_date')) {
-                $table->date('completion_date')->nullable()->after('completed_at');
+            if (Schema::hasTable('todos')) {
+                if (!Schema::hasColumn('todos', 'is_daily_task')) {
+                    $table->boolean('is_daily_task')->default(true)->after('incomplete_reason');
+                }
+                if (!Schema::hasColumn('todos', 'completion_date')) {
+                    $table->date('completion_date')->nullable()->after('completed_at');
+                }
             }
         });
     }
@@ -27,11 +29,13 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('todos', function (Blueprint $table) {
-            if (Schema::hasColumn('todos', 'is_daily_task')) {
-                $table->dropColumn('is_daily_task');
-            }
-            if (Schema::hasColumn('todos', 'completion_date')) {
-                $table->dropColumn('completion_date');
+            if (Schema::hasTable('todos')) {
+                if (Schema::hasColumn('todos', 'is_daily_task')) {
+                    $table->dropColumn('is_daily_task');
+                }
+                if (Schema::hasColumn('todos', 'completion_date')) {
+                    $table->dropColumn('completion_date');
+                }
             }
         });
     }

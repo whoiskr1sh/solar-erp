@@ -17,9 +17,13 @@
             @php
                 $assignedLeadsCount = isset($viewedLeadIds) ? count($viewedLeadIds) : 0;
                 $isUnavailable = !auth()->user()->isAvailableForFollowup();
-                $hasPendingRequest = \App\Models\LeadReassignmentRequest::where('requested_by', auth()->id())
-                    ->whereIn('status', ['pending_manager_approval', 'pending_admin_approval'])
-                    ->exists();
+
+                $hasPendingRequest = false;
+                if (class_exists(\App\Models\LeadReassignmentRequest::class) && \Illuminate\Support\Facades\Schema::hasTable('lead_reassignment_requests')) {
+                    $hasPendingRequest = \App\Models\LeadReassignmentRequest::where('requested_by', auth()->id())
+                        ->whereIn('status', ['pending_manager_approval', 'pending_admin_approval'])
+                        ->exists();
+                }
             @endphp
             
             {{-- Show reassignment button to all users (only hide if pending request exists) --}}
@@ -350,7 +354,7 @@
                                     @elseif($isAssignedUser)
                                         <span class="text-gray-900">{{ $lead->phone ?? 'N/A' }}</span>
                                     @elseif($isUnassigned)
-                                        <form method="POST" action="{{ route('leads.reveal-contact', $lead->id) }}" style="display:inline" onsubmit="revealContact(event, {{ $lead->id }}, '{{ csrf_token() }}', '{{ route('leads.reveal-contact', $lead->id) }}', 'phone-blur-{{ $lead->id }}', '')">
+                                        <form method="POST" action="{{ route('leads.reveal-contact', $lead->id) }}" style="display:inline" onsubmit="event.preventDefault(); revealContactAjax({{ $lead->id }});">
                                             @csrf
                                             <span id="phone-blur-{{ $lead->id }}" style="filter: blur(4px); -webkit-filter: blur(4px);">Contact hidden</span>
                                             <button type="submit" class="ml-1 cursor-pointer bg-transparent border-none p-0" style="background:none;outline:none;" title="Show phone">👁️</button>
@@ -370,7 +374,7 @@
                                     @elseif($isAssignedUser)
                                         <span class="text-gray-900" id="email-blur-{{ $lead->id }}">{{ $lead->email ?? 'N/A' }}</span>
                                     @elseif($isUnassigned)
-                                        <form method="POST" action="{{ route('leads.reveal-contact', $lead->id) }}" style="display:inline" onsubmit="revealContact(event, {{ $lead->id }}, '{{ csrf_token() }}', '{{ route('leads.reveal-contact', $lead->id) }}', 'email-blur-{{ $lead->id }}', '')">
+                                        <form method="POST" action="{{ route('leads.reveal-contact', $lead->id) }}" style="display:inline" onsubmit="event.preventDefault(); revealContactAjax({{ $lead->id }});">
                                             @csrf
                                             <span id="email-blur-{{ $lead->id }}" style="filter: blur(4px); -webkit-filter: blur(4px);">Contact hidden</span>
                                             <button type="submit" class="ml-1 cursor-pointer bg-transparent border-none p-0" style="background:none;outline:none;" title="Show email">👁️</button>
@@ -564,13 +568,13 @@
                                         <div class="relative flex items-center">
                                             <span class="text-gray-900 cursor-pointer transition-all duration-200 select-none" 
                                                   id="phone-blur-{{ $lead->id }}"
-                                                  onclick="revealContact({{ $lead->id }}, this)"
+                                                  onclick="revealContactAjax({{ $lead->id }}, this)"
                                                   title="Click to reveal contact number{{ $isUnassigned ? ' (will assign lead to you)' : '' }}"
                                                   data-revealed="false"
                                                   style="filter: blur(4px); -webkit-filter: blur(4px);">
                                                 {{ Str::limit($lead->phone, 12) }}
                                             </span>
-                                            <span class="text-xs text-blue-600 ml-1 cursor-pointer" title="Click to reveal{{ $isUnassigned ? ' (will assign lead to you)' : '' }}" onclick="revealContact({{ $lead->id }}, document.getElementById('phone-blur-{{ $lead->id }}'))">👁️</span>
+                                            <span class="text-xs text-blue-600 ml-1 cursor-pointer" title="Click to reveal{{ $isUnassigned ? ' (will assign lead to you)' : '' }}" onclick="revealContactAjax({{ $lead->id }}, document.getElementById('phone-blur-{{ $lead->id }}'))">👁️</span>
                                         </div>
                                         @php $isAssignedUser = $lead->assigned_user_id == auth()->id(); @endphp
                                         @if($isAssignedUser)
@@ -930,17 +934,24 @@ document.getElementById('deleteModal').addEventListener('click', function(e) {
     }
 });
 
-// Reveal contact number function
-function revealContact(leadId, element) {
-    // Check if already revealed
-    if (element.getAttribute('data-revealed') === 'true') {
+// Reveal contact/email via AJAX and update both phone and email spans
+function revealContactAjax(leadId, element) {
+    // element may be undefined; find phone/email spans
+    const phoneSpan = document.getElementById('phone-blur-' + leadId);
+    const emailSpan = document.getElementById('email-blur-' + leadId);
+
+    // If already revealed, skip
+    if ((phoneSpan && phoneSpan.getAttribute('data-revealed') === 'true') || (emailSpan && emailSpan.getAttribute('data-revealed') === 'true')) {
         return;
     }
-    // Prevent multiple clicks
-    element.style.pointerEvents = 'none';
-    element.style.cursor = 'wait';
-    element.style.opacity = '0.6';
-    // Make AJAX request to reveal contact
+
+    // Disable element if provided
+    if (element && element.style) {
+        element.style.pointerEvents = 'none';
+        element.style.cursor = 'wait';
+        element.style.opacity = '0.6';
+    }
+
     fetch(`/leads/${leadId}/reveal-contact`, {
         method: 'POST',
         headers: {
@@ -952,23 +963,35 @@ function revealContact(leadId, element) {
     })
     .then(response => response.json())
     .then(data => {
-        if (data.success && data.phone) {
-            const contactContainer = document.getElementById('contact-container-' + leadId);
-            if (contactContainer) {
-                contactContainer.innerHTML = `<div class="text-xs text-gray-900 truncate" title="${data.phone}">${data.phone.length > 12 ? data.phone.substring(0, 12) + '...' : data.phone}</div>`;
+        if (data.success) {
+            if (phoneSpan && data.phone) {
+                phoneSpan.textContent = data.phone;
+                phoneSpan.style.filter = '';
+                phoneSpan.style.webkitFilter = '';
+                phoneSpan.setAttribute('data-revealed', 'true');
+            }
+            if (emailSpan && data.email) {
+                emailSpan.textContent = data.email;
+                emailSpan.style.filter = '';
+                emailSpan.style.webkitFilter = '';
+                emailSpan.setAttribute('data-revealed', 'true');
             }
         } else {
             alert(data.message || 'Failed to reveal contact/email.');
+            if (element && element.style) {
+                element.style.pointerEvents = 'auto';
+                element.style.cursor = 'pointer';
+                element.style.opacity = '1';
+            }
+        }
+    })
+    .catch(() => {
+        alert('Failed to reveal contact/email.');
+        if (element && element.style) {
             element.style.pointerEvents = 'auto';
             element.style.cursor = 'pointer';
             element.style.opacity = '1';
         }
-    })
-    .catch(error => {
-        alert('Failed to reveal contact/email.');
-        element.style.pointerEvents = 'auto';
-        element.style.cursor = 'pointer';
-        element.style.opacity = '1';
     });
 }
 

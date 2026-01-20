@@ -1813,17 +1813,20 @@
                                     </svg>
                                 @endif
                                 @php
-                                    $incompleteTodoCount = \App\Models\Todo::where('user_id', auth()->id())
-                                        ->where(function($query) {
-                                            $query->where('task_date', now()->toDateString())
-                                                  ->orWhere(function($q) {
-                                                      $q->where('task_date', '<', now()->toDateString())
-                                                        ->whereIn('status', ['pending', 'in_progress'])
-                                                        ->where('is_carried_over', true);
-                                                  });
-                                        })
-                                        ->whereIn('status', ['pending', 'in_progress'])
-                                        ->count();
+                                    $incompleteTodoCount = 0;
+                                    if (class_exists(\App\Models\Todo::class) && \Illuminate\Support\Facades\Schema::hasTable('todos')) {
+                                        $incompleteTodoCount = \App\Models\Todo::where('user_id', auth()->id())
+                                            ->where(function($query) {
+                                                $query->where('task_date', now()->toDateString())
+                                                      ->orWhere(function($q) {
+                                                          $q->where('task_date', '<', now()->toDateString())
+                                                            ->whereIn('status', ['pending', 'in_progress'])
+                                                            ->where('is_carried_over', true);
+                                                      });
+                                            })
+                                            ->whereIn('status', ['pending', 'in_progress'])
+                                            ->count();
+                                    }
                                 @endphp
                                 @if($incompleteTodoCount > 0)
                                     <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">{{ $incompleteTodoCount > 9 ? '9+' : $incompleteTodoCount }}</span>

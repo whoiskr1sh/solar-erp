@@ -11,9 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('todos', function (Blueprint $table) {
-            $table->boolean('is_carried_over')->default(false)->after('task_date');
-        });
+        if (Schema::hasTable('todos')) {
+            Schema::table('todos', function (Blueprint $table) {
+                $table->boolean('is_carried_over')->default(false)->after('task_date');
+            });
+        }
     }
 
     /**
@@ -21,8 +23,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('todos', function (Blueprint $table) {
-            $table->dropColumn('is_carried_over');
-        });
+        if (Schema::hasTable('todos')) {
+            Schema::table('todos', function (Blueprint $table) {
+                $table->dropColumn('is_carried_over');
+            });
+        }
     }
 };

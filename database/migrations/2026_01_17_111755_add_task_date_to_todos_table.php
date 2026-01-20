@@ -11,9 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('todos', function (Blueprint $table) {
-            $table->date('task_date')->nullable()->after('status');
-        });
+        if (Schema::hasTable('todos')) {
+            Schema::table('todos', function (Blueprint $table) {
+                $table->date('task_date')->nullable()->after('status');
+            });
+        }
     }
 
     /**
@@ -21,8 +23,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('todos', function (Blueprint $table) {
-            $table->dropColumn('task_date');
-        });
+        if (Schema::hasTable('todos')) {
+            Schema::table('todos', function (Blueprint $table) {
+                $table->dropColumn('task_date');
+            });
+        }
     }
 };

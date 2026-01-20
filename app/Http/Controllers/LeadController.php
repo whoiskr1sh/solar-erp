@@ -16,6 +16,7 @@ use App\Imports\LeadsImport;
 use App\Services\BackupService;
 
 class LeadController extends Controller
+{
     /**
      * Show documents for a specific lead
      */
@@ -28,7 +29,6 @@ class LeadController extends Controller
         // For now, just pass the lead to the view
         return view('leads.documents', compact('lead'));
     }
-{
     /**
      * Save selected revised quotation for a lead (AJAX/API)
      */
@@ -833,6 +833,36 @@ class LeadController extends Controller
             ]);
         }
         return redirect()->back()->with('success', 'Lead status updated successfully!');
+    }
+
+    /**
+     * Update the lead stage (pipeline stage)
+     */
+    public function updateStage(Request $request, Lead $lead)
+    {
+        $request->validate([
+            'lead_stage' => 'required|string|max:50',
+        ]);
+
+        $oldStage = $lead->lead_stage;
+        $lead->lead_stage = $request->lead_stage;
+        $lead->last_updated_by = Auth::id();
+        $lead->save();
+
+        // Optionally log stage change
+        if ($oldStage !== $request->lead_stage) {
+            Log::info('Lead stage changed', ['lead_id' => $lead->id, 'from' => $oldStage, 'to' => $request->lead_stage, 'by' => Auth::id()]);
+        }
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Lead stage updated successfully!',
+                'lead' => $lead->fresh(),
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Lead stage updated successfully!');
     }
 
     public function import(Request $request)

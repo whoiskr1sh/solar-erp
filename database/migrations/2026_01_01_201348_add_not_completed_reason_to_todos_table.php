@@ -12,7 +12,7 @@ return new class extends Migration
     public function up()
     {
         Schema::table('todos', function (Blueprint $table) {
-            if (!Schema::hasColumn('todos', 'not_completed_reason')) {
+            if (Schema::hasTable('todos') && !Schema::hasColumn('todos', 'not_completed_reason')) {
                 $table->text('not_completed_reason')->nullable()->after('remarks');
             }
         });
@@ -21,7 +21,9 @@ return new class extends Migration
     public function down()
     {
         Schema::table('todos', function (Blueprint $table) {
-            $table->dropColumn('not_completed_reason');
+            if (Schema::hasTable('todos')) {
+                $table->dropColumn('not_completed_reason');
+            }
         });
     }
     

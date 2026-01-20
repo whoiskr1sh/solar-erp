@@ -124,20 +124,19 @@ class AuthController extends Controller
                 ->whereIn('status', ['pending', 'in_progress'])
                 ->get();
 
-            // Carry forward today's incomplete tasks to tomorrow (if logging out on a weekday)
-            if ($incompleteTodos->count() > 0 && !$isWeekend) {
-                $tomorrow = $today->copy()->addDay()->toDateString();
-                foreach ($incompleteTodos as $todo) {
-                    $todo->update([
-                        'task_date' => $tomorrow,
-                        'is_carried_over' => true,
-                    ]);
-                }
-            }
+            // Do NOT move tasks to tomorrow on logout. Carryover should be handled
+            // centrally (on next login or when rendering todos) so users who logout
+            // and login again on the same day keep seeing their tasks.
 
-            // On Saturday or Sunday, block logout if any incomplete tasks remain
-            if ($isWeekend && $incompleteTodos->count() > 0) {
-                return back()->with('error', 'You cannot logout on Saturday or Sunday until all your tasks for today are completed.');
+            // On Saturday or Sunday, block logout if any incomplete tasks exist (any date)
+            if ($isWeekend) {
+                $anyIncomplete = Todo::forUser($user->id)
+                    ->whereIn('status', ['pending', 'in_progress'])
+                    ->exists();
+
+                if ($anyIncomplete) {
+                    return back()->with('error', 'You cannot logout on Saturday or Sunday until all your tasks are completed.');
+                }
             }
         }
 

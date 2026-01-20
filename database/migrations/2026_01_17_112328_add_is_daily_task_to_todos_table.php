@@ -12,7 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('todos', function (Blueprint $table) {
-            $table->boolean('is_daily_task')->default(false)->after('priority');
+                if (Schema::hasTable('todos')) {
+                    $table->boolean('is_daily_task')->default(false)->after('priority');
+                }
         });
     }
 
@@ -22,7 +24,9 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('todos', function (Blueprint $table) {
-            $table->dropColumn('is_daily_task');
+                if (Schema::hasTable('todos')) {
+                    $table->dropColumn('is_daily_task');
+                }
         });
     }
 };

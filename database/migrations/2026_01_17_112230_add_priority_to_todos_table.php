@@ -12,7 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('todos', function (Blueprint $table) {
-            $table->integer('priority')->default(0)->after('remarks');
+            if (Schema::hasTable('todos')) {
+                $table->tinyInteger('priority')->default(0)->after('status');
+            }
         });
     }
 
@@ -22,7 +24,9 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('todos', function (Blueprint $table) {
-            $table->dropColumn('priority');
+            if (Schema::hasTable('todos')) {
+                $table->dropColumn('priority');
+            }
         });
     }
 };

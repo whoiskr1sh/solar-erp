@@ -120,17 +120,8 @@ class TodoController extends Controller
             'priority' => 'nullable|in:low,medium,high',
         ]);
 
-        // Check if user has incomplete carried over tasks
-        $hasIncompleteCarriedOver = Todo::forUser(Auth::id())
-            ->where('task_date', '<', now()->toDateString())
-            ->whereIn('status', ['pending', 'in_progress'])
-            ->where('is_carried_over', true)
-            ->exists();
-
-        if ($hasIncompleteCarriedOver) {
-            return redirect()->route('todos.index')
-                ->with('error', 'Please complete all pending carried over tasks before adding new tasks.');
-        }
+        // Allow creating new tasks regardless of carried over tasks.
+        // Business rule: carried over tasks remain visible but should not block adding new tasks.
 
         Todo::create([
             'title' => $request->title,

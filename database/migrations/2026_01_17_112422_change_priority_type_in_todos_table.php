@@ -15,7 +15,9 @@ return new class extends Migration
             $table->dropColumn('priority');
         });
         Schema::table('todos', function (Blueprint $table) {
-            $table->enum('priority', ['low', 'medium', 'high'])->default('medium')->after('remarks');
+                if (Schema::hasTable('todos')) {
+                    $table->enum('priority', ['low', 'medium', 'high'])->default('medium')->after('remarks');
+                }
         });
     }
 
@@ -28,7 +30,9 @@ return new class extends Migration
             $table->dropColumn('priority');
         });
         Schema::table('todos', function (Blueprint $table) {
-            $table->integer('priority')->default(0)->after('remarks');
+                if (Schema::hasTable('todos')) {
+                    $table->integer('priority')->default(0)->after('remarks');
+                }
         });
     }
 };
