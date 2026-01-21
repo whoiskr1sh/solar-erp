@@ -384,6 +384,13 @@ class LeadController extends Controller
         }
         $leadData['lead_stage'] = 'new';
 
+        // If no assignee was selected in the form, auto-assign the lead to its creator.
+        // The create form only shows `assigned_user_id` to SUPER ADMIN / PROJECT MANAGER,
+        // so for regular users we want the lead to appear under their assigned leads.
+        if (empty($leadData['assigned_user_id'])) {
+            $leadData['assigned_user_id'] = Auth::id();
+        }
+
         // Handle mandatory attachments
         if ($request->hasFile('electricity_bill')) {
             $leadData['electricity_bill_path'] = $request->file('electricity_bill')->store('leads/electricity-bills', 'public');
