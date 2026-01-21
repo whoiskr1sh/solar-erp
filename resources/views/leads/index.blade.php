@@ -772,11 +772,14 @@
                                     Create
                                 </a>
                             </td>
-                            <td class="px-3 py-3 whitespace-nowrap text-xs">
+                            <td id="revised-quotation-{{ $lead->id }}" class="px-3 py-3 whitespace-nowrap text-xs">
                                 @if($lead->selectedRevisedQuotation)
                                     <a href="{{ route('quotations.show', $lead->selectedRevisedQuotation) }}" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-pink-100 text-pink-800" target="_blank">
                                         {{ $lead->selectedRevisedQuotation->quotation_number }} (Revised)
                                     </a>
+                                    <button type="button" onclick="openSelectQuotationModal({{ $lead->id }}, '{{ addslashes($lead->name) }}')" class="inline-flex items-center px-2 py-0.5 rounded-md text-xs ml-2 bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors duration-200 border border-amber-200">
+                                        Change
+                                    </button>
                                 @else
                                     @php $revisedCount = $lead->revised_quotations_count ?? 0; @endphp
                                     @if($revisedCount > 0)
@@ -1164,16 +1167,41 @@ function selectQuotationForRevision(quotationId) {
             },
             body: JSON.stringify({ quotation_id: quotationId })
         })
-        .then(response => response.json())
+        .then(response => {
+            console.log('select-revised-quotation response status:', response.status);
+            if (!response.ok) {
+                return response.text().then(text => {
+                    console.error('select-revised-quotation non-OK response:', response.status, text);
+                    throw new Error(`Server responded with status ${response.status}`);
+                });
+            }
+            return response.json();
+        })
         .then(data => {
-            if (data.success) {
-                window.location.reload();
+            console.log('select-revised-quotation data:', data);
+            if (data && data.success && data.quotation) {
+                // Update the revised quotation cell for this lead without reloading
+                const leadId = window.currentSelectLeadId;
+                const td = document.getElementById(`revised-quotation-${leadId}`);
+                if (td) {
+                    td.innerHTML = `
+                        <a href="${data.quotation.show_url}" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-pink-100 text-pink-800" target="_blank">
+                            ${data.quotation.quotation_number} (Revised)
+                        </a>
+                        <button type="button" onclick="openSelectQuotationModal(${leadId}, '${document.getElementById('selectedLeadName').textContent.replace(/'/g, "\\'") }')" class="inline-flex items-center px-2 py-0.5 rounded-md text-xs ml-2 bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors duration-200 border border-amber-200">
+                            Change
+                        </button>
+                    `;
+                }
+                closeSelectQuotationModal();
             } else {
-                alert('Failed to select revised quotation.');
+                console.error('select-revised-quotation unexpected response format', data);
+                alert('Failed to select revised quotation. See console for details.');
             }
         })
-        .catch(() => {
-            alert('Failed to select revised quotation.');
+        .catch((err) => {
+            console.error('select-revised-quotation error', err);
+            alert('Failed to select revised quotation. See console for details.');
         });
     }
 }

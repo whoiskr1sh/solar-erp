@@ -46,10 +46,20 @@ class LeadController extends Controller
         $lead->selected_revised_quotation_id = $request->quotation_id;
         $lead->save();
 
+        // Return selected quotation details so the frontend can update the row without a full reload
+        $quotation = Quotation::find($request->quotation_id);
+
         return response()->json([
             'success' => true,
             'message' => 'Revised quotation selected successfully.',
             'selected_revised_quotation_id' => $lead->selected_revised_quotation_id,
+            'quotation' => $quotation ? [
+                'id' => $quotation->id,
+                'quotation_number' => $quotation->quotation_number,
+                'total_amount' => $quotation->total_amount,
+                'status' => $quotation->status,
+                'show_url' => route('quotations.show', $quotation),
+            ] : null,
         ]);
     }
     // ...existing methods...
@@ -266,14 +276,13 @@ class LeadController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255',
             'phone' => 'required|string|max:20',
-            'consumer_number' => 'required|string|max:100',
             'company' => 'nullable|string|max:255',
             'address' => 'nullable|string',
             'city' => 'nullable|string|max:100',
             'state' => 'nullable|string|max:100',
             'pincode' => 'nullable|string|regex:/^[0-9]{6}$/',
             'source' => 'required|in:website,indiamart,justdial,meta_ads,referral,cold_call,other',
-            'status' => 'required|in:new,contacted,qualified,proposal,negotiation,converted,lost',
+            'status' => 'required|in:new,interested,partially_interested,not_interested,not_reachable,not_answered',
             'lead_stage' => 'required|in:new,quotation_sent,site_survey_done,solar_documents_collected,loan_documents_collected',
             'priority' => 'required|in:low,medium,high,urgent',
             'estimated_value' => 'nullable|numeric|min:0',
@@ -316,7 +325,7 @@ class LeadController extends Controller
                 // Create duplicate lead approval request
                 // Only store fillable fields in lead_data (exclude system fields)
                 $leadData = $request->only([
-                    'name', 'email', 'phone', 'consumer_number', 'company', 'address', 'city', 'state', 'pincode', 'source', 
+                    'name', 'email', 'phone', 'company', 'address', 'city', 'state', 'pincode', 'source', 
                     'status', 'lead_stage', 'priority', 'notes', 'estimated_value', 
                     'expected_close_date', 'follow_up_date', 'follow_up_notes', 
                     'assigned_user_id', 'channel_partner_id'
@@ -364,11 +373,15 @@ class LeadController extends Controller
             'passport_photo',
             'site_photo_pre_installation',
             'site_photo_post_installation',
-            'status', // Remove status from request data
+            // keep 'status' so user-selected status is stored
         ]);
         $leadData['created_by'] = Auth::id();
-        // Always set status to a valid enum value
-        $leadData['status'] = 'new';
+        // Respect user-selected status if provided, otherwise default to 'new'
+        if ($request->filled('status')) {
+            $leadData['status'] = $request->input('status');
+        } else {
+            $leadData['status'] = 'new';
+        }
         $leadData['lead_stage'] = 'new';
 
         // Handle mandatory attachments
@@ -483,7 +496,6 @@ class LeadController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255',
             'phone' => 'required|string|max:20',
-            'consumer_number' => 'required|string|max:100',
             'company' => 'nullable|string|max:255',
             'address' => 'nullable|string',
             'city' => 'nullable|string|max:100',

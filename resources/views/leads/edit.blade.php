@@ -62,11 +62,7 @@
                     <input type="tel" id="phone" name="phone" value="{{ old('phone', $lead->phone) }}" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-teal-500 focus:border-teal-500">
                 </div>
 
-                <!-- Consumer No -->
-                <div>
-                    <label for="consumer_number" class="block text-sm font-medium text-gray-700 mb-2">Consumer No <span class="text-red-500">*</span></label>
-                    <input type="text" id="consumer_number" name="consumer_number" value="{{ old('consumer_number', $lead->consumer_number) }}" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-teal-500 focus:border-teal-500">
-                </div>
+                <!-- Consumer No removed -->
 
                 <!-- Email -->
                 <div>
