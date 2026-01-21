@@ -394,14 +394,14 @@ class TodoController extends Controller
             ->exists();
 
         // Determine if the daily todo modal should be shown for this session.
-        // Show the modal only if it hasn't been shown in this session AND
-        // the user does NOT already have todos for today. If the user has
-        // today's todos, we should not prompt them again.
+        // Show the modal once per login session. The frontend will use
+        // `has_today_todos` to decide whether to prompt the user to add
+        // their first task or ask if they want to add another task.
         $hasModalShownThisSession = session()->get('daily_todo_modal_shown', false);
 
         $showModal = false;
-        if (! $hasModalShownThisSession && ! $hasTodayTodos) {
-            // mark as shown for this session to avoid repeated prompts
+        if (! $hasModalShownThisSession) {
+            // mark as shown for this session to avoid repeated prompts within the same session
             session()->put('daily_todo_modal_shown', true);
             $showModal = true;
         }
@@ -411,7 +411,8 @@ class TodoController extends Controller
             'has_todos' => $hasTodos,
             'has_today_todos' => $hasTodayTodos,
             'incomplete_count' => $todayTodos->whereIn('status', ['pending', 'in_progress'])->count(),
-            // Frontend will show the modal if this is true OR if there are no todos for today
+            // Frontend should show the modal when `show_modal` is true.
+            // Use `has_today_todos` to change the modal copy (first task vs add another).
             'show_modal' => $showModal
         ]);
     }

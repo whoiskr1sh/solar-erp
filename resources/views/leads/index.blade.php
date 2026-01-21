@@ -457,10 +457,10 @@
                                 </td>
                                 <td class="px-4 py-3 whitespace-nowrap">
                                     @if($lead->assigned_user_id == auth()->id())
-                                        <form method="POST" action="{{ route('leads.updateStage', $lead->id) }}" class="inline">
+                                        <form method="POST" action="{{ route('leads.updateStage', $lead->id) }}" class="inline lead-stage-form">
                                             @csrf
                                             @method('PATCH')
-                                            <select name="lead_stage" onchange="this.form.submit()" class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium border-gray-300 focus:ring-teal-500 focus:border-teal-500 {{ $lead->lead_stage_badge }}">
+                                            <select name="lead_stage" onchange="submitLeadStage(this)" class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium border-gray-300 focus:ring-teal-500 focus:border-teal-500 {{ $lead->lead_stage_badge }}">
                                                 <option value="not_set" {{ $lead->lead_stage == 'not_set' ? 'selected' : '' }}>Not Set</option>
                                                 <option value="new" {{ $lead->lead_stage == 'new' ? 'selected' : '' }}>New</option>
                                                 <option value="contacted" {{ $lead->lead_stage == 'contacted' ? 'selected' : '' }}>Contacted</option>
@@ -718,10 +718,10 @@
                             </td>
                             <td class="px-3 py-3 whitespace-nowrap">
                                 @if($lead->assigned_user_id == auth()->id())
-                                    <form method="POST" action="{{ route('leads.updateStage', $lead->id) }}" class="inline">
+                                    <form method="POST" action="{{ route('leads.updateStage', $lead->id) }}" class="inline lead-stage-form">
                                         @csrf
                                         @method('PATCH')
-                                        <select name="lead_stage" onchange="this.form.submit()" class="inline-flex px-1 py-0.5 rounded-full text-xs font-medium border-gray-300 focus:ring-teal-500 focus:border-teal-500 min-w-0 w-auto {{ $lead->lead_stage_badge }}">
+                                        <select name="lead_stage" onchange="submitLeadStage(this)" class="inline-flex px-1 py-0.5 rounded-full text-xs font-medium border-gray-300 focus:ring-teal-500 focus:border-teal-500 min-w-0 w-auto {{ $lead->lead_stage_badge }}">
                                             <option value="not_set" {{ $lead->lead_stage == 'not_set' ? 'selected' : '' }}>Not Set</option>
                                             <option value="quotation_sent" {{ $lead->lead_stage == 'quotation_sent' ? 'selected' : '' }}>QUOTATION SENT</option>
                                             <option value="site_survey" {{ $lead->lead_stage == 'site_survey' ? 'selected' : '' }}>SITE SURVEY</option>
@@ -1246,6 +1246,59 @@ function revealContact(leadId, element) {
         element.style.cursor = 'pointer';
         element.style.opacity = '1';
     });
+}
+</script>
+<script>
+async function submitLeadStage(selectEl) {
+    try {
+        const form = selectEl.closest('form');
+        if (!form) return;
+        const url = form.action;
+        const fd = new FormData(form);
+        // include current select value is already in fd
+
+        const resp = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: fd,
+            credentials: 'same-origin'
+        });
+
+        if (!resp.ok) {
+            // fallback to full form submit on failure
+            form.submit();
+            return;
+        }
+
+        const data = await resp.json();
+        if (data && data.success) {
+            // If we're on the new-leads page and the updated lead is no longer 'new', remove the row
+            try {
+                const currentPath = window.location.pathname;
+                const updatedStage = data.lead && data.lead.lead_stage ? data.lead.lead_stage : selectEl.value;
+                if (currentPath.endsWith('/leads/new') && updatedStage !== 'new') {
+                    const row = selectEl.closest('tr');
+                    if (row) row.remove();
+                } else {
+                    // Update badge classes/text if present
+                    // (optional) leave as-is for now
+                }
+            } catch (e) {
+                // ignore UI update errors
+            }
+        } else {
+            alert((data && data.message) || 'Failed to update lead stage');
+            form.submit();
+        }
+    } catch (err) {
+        console.error('Error updating lead stage', err);
+        // fallback to normal submission
+        try { selectEl.form.submit(); } catch (e) {}
+    }
 }
 </script>
 @endsection
