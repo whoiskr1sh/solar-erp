@@ -64,13 +64,11 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Status *</label>
                     <select name="status" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500">
-                        <option value="new" {{ old('status') == 'new' ? 'selected' : '' }}>New</option>
-                        <option value="contacted" {{ old('status') == 'contacted' ? 'selected' : '' }}>Contacted</option>
-                        <option value="qualified" {{ old('status') == 'qualified' ? 'selected' : '' }}>Qualified</option>
-                        <option value="proposal" {{ old('status') == 'proposal' ? 'selected' : '' }}>Proposal</option>
-                        <option value="negotiation" {{ old('status') == 'negotiation' ? 'selected' : '' }}>Negotiation</option>
-                        <option value="converted" {{ old('status') == 'converted' ? 'selected' : '' }}>Converted</option>
-                        <option value="lost" {{ old('status') == 'lost' ? 'selected' : '' }}>Lost</option>
+                        <option value="interested" {{ old('status') == 'interested' ? 'selected' : '' }}>Interested</option>
+                        <option value="partially_interested" {{ old('status') == 'partially_interested' ? 'selected' : '' }}>Partially Interested</option>
+                        <option value="not_interested" {{ old('status') == 'not_interested' ? 'selected' : '' }}>Not Interested</option>
+                        <option value="not_reachable" {{ old('status') == 'not_reachable' ? 'selected' : '' }}>Not Reachable</option>
+                        <option value="not_answered" {{ old('status') == 'not_answered' ? 'selected' : '' }}>Not Answered</option>
                     </select>
                     @error('status')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>

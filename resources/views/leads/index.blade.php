@@ -518,8 +518,8 @@
                             <th class="w-20 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source</th>
                             <th class="w-20 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                             <th class="w-32 max-w-xs px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lead Stage</th>
-                            <th class="w-20 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created By</th>
                             <th class="w-16 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
+                            <th class="w-20 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created By</th>
                             <th class="w-20 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
                             <th class="w-20 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">New Lead</th>
                             <th class="w-24 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quotations</th>
@@ -608,11 +608,9 @@
                                         @else
                                             <div class="text-xs text-gray-400 italic">Contact restricted</div>
                                         @endif
-                                        @if($contactViewer)
-                                            <div class="text-xs text-blue-600 mt-1" title="Viewed by {{ $contactViewer['user_name'] }} on {{ $contactViewer['viewed_at'] ? \Carbon\Carbon::parse($contactViewer['viewed_at'])->format('M d, Y g:i A') : 'N/A' }}">
-                                                👁️ Viewed by {{ Str::limit($contactViewer['user_name'], 15) }}
-                                            </div>
-                                        @endif
+                                        <div class="text-xs text-blue-600 mt-1" title="Created by {{ $lead->creator->name ?? 'Unknown' }}">
+                                            📝 Created by {{ Str::limit($lead->creator->name ?? 'Unknown', 15) }}
+                                        </div>
                                     </div>
                                 @else
                                     {{-- Not assigned to user and not admin/manager and lead is assigned to someone else - show restricted message --}}
