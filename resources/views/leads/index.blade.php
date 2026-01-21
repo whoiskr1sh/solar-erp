@@ -503,7 +503,11 @@
     <div class="bg-white shadow overflow-hidden sm:rounded-md">
         <div class="px-4 py-5 sm:p-6">
             <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-semibold text-gray-900">All Your Assigned Leads</h3>
+                @if(auth()->check() && auth()->user()->hasRole('SUPER ADMIN'))
+                    <h3 class="text-lg font-semibold text-gray-900">All Your Assigned Leads</h3>
+                @else
+                    <h3 class="text-lg font-semibold text-gray-900">New Leads</h3>
+                @endif
                 <span class="text-sm text-gray-500">Total: {{ $leads->total() }} lead(s)</span>
             </div>
             <div class="overflow-x-auto">
@@ -557,10 +561,16 @@
                                 @endphp
                                 
                                 @if($isSuperAdmin)
-                                    {{-- Super Admin - show contact directly without blur --}}
+                                    {{-- Super Admin - show full contact (phone + email) --}}
                                     <div class="text-xs">
-                                        <div class="text-gray-900 truncate" title="{{ $lead->phone }}">{{ Str::limit($lead->phone, 12) }}</div>
-                                        <div class="text-xs text-gray-400 italic">Contact restricted</div>
+                                        <div class="text-gray-900 truncate" title="{{ $lead->phone }}">{{ $lead->phone ?? 'N/A' }}</div>
+                                        <div class="text-xs text-gray-900 truncate" title="{{ $lead->email ?? 'No Email' }}">
+                                            @if($lead->email)
+                                                <a href="mailto:{{ $lead->email }}" class="text-blue-600 hover:underline">{{ Str::limit($lead->email, 24) }}</a>
+                                            @else
+                                                <span class="text-gray-500">No Email</span>
+                                            @endif
+                                        </div>
                                     </div>
                                 @elseif($canViewContact && !$hasViewedContact)
                                     {{-- Blurred contact - can be clicked to reveal (for assigned user, admin/manager, or unassigned leads) --}}

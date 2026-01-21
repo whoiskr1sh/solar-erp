@@ -109,7 +109,11 @@
             <div>
                 <label class="block text-xs font-medium text-gray-700 mb-1">Lead</label>
                 <select name="lead_id" class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-teal-500">
-                    <option value="">All Leads</option>
+                    @if(auth()->check() && auth()->user()->hasRole('SUPER ADMIN'))
+                        <option value="">All Leads</option>
+                    @else
+                        <option value="">New Leads</option>
+                    @endif
                     @foreach($leads as $lead)
                         <option value="{{ $lead->id }}" {{ request('lead_id') == $lead->id ? 'selected' : '' }}>{{ Str::limit($lead->name, 20) }}</option>
                     @endforeach
