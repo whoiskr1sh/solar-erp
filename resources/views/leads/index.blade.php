@@ -604,7 +604,9 @@
                                         <div class="text-gray-900 truncate" title="{{ $lead->phone }}">{{ Str::limit($lead->phone, 12) }}</div>
                                         @php $isAssignedUser = $lead->assigned_user_id == auth()->id(); @endphp
                                         @if($isAssignedUser)
-                                            <div class="text-xs text-gray-900 truncate" title="Email revealed">Email revealed</div>
+                                            <div class="text-xs text-gray-900 truncate" title="{{ $lead->email ?? 'No Email' }}">
+                                                <a href="mailto:{{ $lead->email }}" class="text-blue-600 hover:underline">{{ Str::limit($lead->email ?? 'No Email', 24) }}</a>
+                                            </div>
                                         @else
                                             <div class="text-xs text-gray-400 italic">Contact restricted</div>
                                         @endif

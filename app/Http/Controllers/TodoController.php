@@ -133,6 +133,14 @@ class TodoController extends Controller
             'status' => 'pending',
         ]);
 
+        // Mark that the user has added today's todo in this session so
+        // subsequent logins during the same day won't prompt again.
+        try {
+            session()->put('daily_todo_modal_shown', true);
+        } catch (\Throwable $e) {
+            // ignore session write errors
+        }
+
         if ($request->has('from_modal')) {
             // If user clicked "Add Task & Add More", stay on dashboard so modal logic can prompt again
             if ($request->input('add_more') === '1') {
@@ -385,17 +393,18 @@ class TodoController extends Controller
             ->where('task_date', now()->toDateString())
             ->exists();
 
-        // Determine if the daily todo modal should be shown for this session
-        // We want it to appear once every time the user logs in,
-        // even if they already have tasks for today.
+        // Determine if the daily todo modal should be shown for this session.
+        // Show the modal only if it hasn't been shown in this session AND
+        // the user does NOT already have todos for today. If the user has
+        // today's todos, we should not prompt them again.
         $hasModalShownThisSession = session()->get('daily_todo_modal_shown', false);
 
-        // If it hasn't been shown yet in this login session, mark it as shown now
-        if (! $hasModalShownThisSession) {
+        $showModal = false;
+        if (! $hasModalShownThisSession && ! $hasTodayTodos) {
+            // mark as shown for this session to avoid repeated prompts
             session()->put('daily_todo_modal_shown', true);
+            $showModal = true;
         }
-
-        $showModal = ! $hasModalShownThisSession;
 
         return response()->json([
             'todos' => $todayTodos,

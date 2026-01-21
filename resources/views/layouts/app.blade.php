@@ -2319,12 +2319,12 @@
             const formContainer = document.getElementById('todoLoginFormContainer');
             const alreadyAddedContainer = document.getElementById('todoLoginAlreadyAdded');
 
+            // If the user already has todos for today, show the "already added" state.
+            // Otherwise show the add-task form so they can add today's tasks.
             if (data.has_today_todos) {
-                // User already has tasks for today – show info/shortcut instead of forcing new task
                 if (formContainer) formContainer.classList.add('hidden');
                 if (alreadyAddedContainer) alreadyAddedContainer.classList.remove('hidden');
             } else {
-                // No tasks yet for today – show add-task form
                 if (formContainer) formContainer.classList.remove('hidden');
                 if (alreadyAddedContainer) alreadyAddedContainer.classList.add('hidden');
             }
