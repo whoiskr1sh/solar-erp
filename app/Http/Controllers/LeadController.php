@@ -69,8 +69,10 @@ class LeadController extends Controller
      */
     public function newLeads(Request $request)
     {
-        $leads = \App\Models\Lead::where('lead_stage', 'new')->orderByDesc('created_at')->paginate(20);
-        return view('leads.new-leads', compact('leads'));
+        // Delegate to index with a lead_stage filter so the dashboard and filters
+        // remain consistent between "All Leads" and "New Leads" pages.
+        $request->merge(['lead_stage' => 'new']);
+        return $this->index($request);
     }
 
     // ...existing methods...
@@ -111,6 +113,12 @@ class LeadController extends Controller
         }
         if ($request->filled('source')) {
             $baseQuery->where('source', $request->source);
+        }
+        // Allow filtering by lead_stage (e.g., 'new') so index can render the
+        // same dashboard when called for new leads. Ignore empty or 'all'
+        // values that the frontend may send for the "All" option.
+        if ($request->filled('lead_stage') && $request->lead_stage !== 'all' && $request->lead_stage !== '') {
+            $baseQuery->where('lead_stage', $request->lead_stage);
         }
         if ($request->filled('assigned_to')) {
             $baseQuery->where('assigned_user_id', $request->assigned_to);

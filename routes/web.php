@@ -119,6 +119,8 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('/leads/{lead}/stage', [LeadController::class, 'updateStage'])->name('leads.updateStage');
     Route::post('/leads/lookup-by-email', [LeadController::class, 'lookupByEmail'])->name('leads.lookup-by-email');
     Route::post('/leads/{lead}/reveal-contact', [LeadController::class, 'revealContact'])->name('leads.reveal-contact');
+    // Dedicated route to list leads with lead_stage = 'new'
+    Route::get('/leads/new', [LeadController::class, 'newLeads'])->name('leads.new');
     
     // Leads Resource Route (must come after specific routes)
     Route::resource('leads', LeadController::class);
