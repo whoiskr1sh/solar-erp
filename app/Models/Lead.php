@@ -12,6 +12,7 @@ class Lead extends Model
     use HasFactory;
 
     protected $fillable = [
+        'consumer_number',
         'name', 'email', 'phone', 'company', 'address', 'city', 'state', 'pincode', 'source', 
         'status', 'lead_stage', 'priority', 'notes', 'estimated_value', 
         'expected_close_date', 'follow_up_date', 'follow_up_notes', 'last_follow_up_at',
