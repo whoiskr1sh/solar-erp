@@ -323,8 +323,10 @@
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lead Stage</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created By</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                <th class="px-4 py-3 align-top text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created By</th>
+                                <th class="px-4 py-3 align-top text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quotation</th>
+                                <th class="px-4 py-3 align-top text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Revised Quotation</th>
+                                <th class="px-4 py-3 align-top text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
@@ -483,8 +485,64 @@
                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                                     {{ $lead->creator->name ?? 'Unknown' }}
                                 </td>
+                                <td class="px-4 py-3 whitespace-nowrap text-xs">
+                                    @php $quotationCount = $lead->latestQuotations->count(); @endphp
+                                    @if($quotationCount > 0)
+                                        <a href="{{ route('leads.show', $lead) }}#quotations" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                            {{ $quotationCount }} {{ Str::plural('Quotation', $quotationCount) }}
+                                        </a>
+                                    @endif
+                                    <a href="{{ route('quotations.create', ['client_id' => $lead->id]) }}" class="inline-flex items-center px-3 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors duration-200 border border-blue-200 ml-2">
+                                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                        </svg>
+                                        Create
+                                    </a>
+                                </td>
+                                <td id="revised-quotation-{{ $lead->id }}" class="px-4 py-3 whitespace-nowrap text-xs">
+                                    @if($lead->selectedRevisedQuotation)
+                                        <a href="{{ route('quotations.show', $lead->selectedRevisedQuotation) }}" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-pink-100 text-pink-800" target="_blank">
+                                            {{ $lead->selectedRevisedQuotation->quotation_number }} (Revised)
+                                        </a>
+                                        <button type="button" onclick="openSelectQuotationModal({{ $lead->id }}, '{{ addslashes($lead->name) }}')" class="inline-flex items-center px-2 py-0.5 rounded-md text-xs ml-2 bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors duration-200 border border-amber-200">
+                                            Change
+                                        </button>
+                                    @else
+                                        @php $revisedCount = $lead->revised_quotations_count ?? 0; @endphp
+                                        @if($revisedCount > 0)
+                                            <a href="{{ route('leads.show', $lead) }}#quotations" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-pink-100 text-pink-800">
+                                                {{ $revisedCount }} {{ Str::plural('Revision', $revisedCount) }}
+                                            </a>
+                                        @else
+                                            @php 
+                                                $existingQuotations = \App\Models\Quotation::where('client_id', $lead->id)
+                                                    ->where('is_revision', false)
+                                                    ->orWhere(function($q) use ($lead) {
+                                                        $q->where('client_id', $lead->id)
+                                                          ->whereNull('parent_quotation_id');
+                                                    })
+                                                    ->distinct('id')
+                                                    ->get()
+                                                    ->unique('id');
+                                            @endphp
+                                            @if($existingQuotations->count() > 0)
+                                                <button type="button" onclick="openSelectQuotationModal({{ $lead->id }}, '{{ $lead->name }}')" class="inline-flex items-center px-3 py-1 rounded-md text-xs font-medium bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors duration-200 border border-amber-200">
+                                                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                                    </svg>
+                                                    Select
+                                                </button>
+                                            @else
+                                                <span class="text-gray-400 text-xs">No Quotations</span>
+                                            @endif
+                                        @endif
+                                    @endif
+                                </td>
                                 <td class="px-4 py-3 whitespace-nowrap text-sm font-medium">
-                                    <a href="{{ route('leads.show', $lead) }}" class="text-teal-600 hover:text-teal-900">View</a>
+                                    <div class="flex items-center space-x-1">
+                                        <a href="{{ route('leads.show', $lead) }}" class="text-teal-600 hover:text-teal-900 text-xs leading-none">View</a>
+                                        <a href="{{ route('leads.documents', $lead) }}" class="text-blue-600 hover:text-blue-900 text-xs leading-none font-semibold">UPLOAD DOCUMENT</a>
+                                    </div>
                                 </td>
                             </tr>
                             @endforeach
@@ -533,6 +591,9 @@
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
                         @forelse($leads as $lead)
+                            @if(in_array($lead->id, $viewedLeadIds))
+                                @continue
+                            @endif
                         <tr class="hover:bg-gray-50">
                             <td class="px-3 py-3 whitespace-nowrap">
                                 <div class="flex items-center">
