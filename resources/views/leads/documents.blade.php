@@ -21,7 +21,7 @@
         <!-- Consumer No -->
         <div class="mb-4">
             <label class="block font-medium mb-1">Consumer Number</label>
-            <input type="text" name="consumer_number" value="{{ old('consumer_number', $lead->consumer_number ?? '') }}" class="w-full border rounded px-3 py-2" placeholder="Enter consumer number">
+            <input type="text" name="consumer_number" required value="{{ old('consumer_number', $lead->consumer_number ?? '') }}" class="w-full border rounded px-3 py-2" placeholder="Enter consumer number">
         </div>
         @csrf
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">

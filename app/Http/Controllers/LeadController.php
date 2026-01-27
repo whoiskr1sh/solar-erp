@@ -993,4 +993,59 @@ class LeadController extends Controller
     {
         return Excel::download(new \App\Exports\LeadsExport, 'leads_export_' . now()->format('Y-m-d') . '.xlsx');
     }
+
+    /**
+     * Handle upload of documents for a lead and save consumer number.
+     */
+    public function uploadDocuments(Request $request, $leadId)
+    {
+        $lead = Lead::findOrFail($leadId);
+
+        $request->validate([
+            'consumer_number' => 'required|string|max:100',
+            'electricity_bill' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
+            'cancelled_cheque' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
+            'aadhar' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
+            'pan' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
+            'other_document' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
+            'passport_photo' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
+            'pre_installation_photo' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
+            'post_installation_photo' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
+        ]);
+
+        // Save consumer number
+        $lead->consumer_number = $request->input('consumer_number');
+
+        // Store files and save paths on the lead record
+        if ($request->hasFile('electricity_bill')) {
+            $lead->electricity_bill_path = $request->file('electricity_bill')->store('leads/electricity-bills', 'public');
+        }
+        if ($request->hasFile('cancelled_cheque')) {
+            $lead->cancelled_cheque_path = $request->file('cancelled_cheque')->store('leads/cancelled-cheques', 'public');
+        }
+        if ($request->hasFile('aadhar')) {
+            $lead->aadhar_path = $request->file('aadhar')->store('leads/documents/aadhar', 'public');
+        }
+        if ($request->hasFile('pan')) {
+            $lead->pan_path = $request->file('pan')->store('leads/documents/pan', 'public');
+        }
+        if ($request->hasFile('other_document')) {
+            $lead->other_document_name = $request->input('other_document_name');
+            $lead->other_document_path = $request->file('other_document')->store('leads/documents/other', 'public');
+        }
+        if ($request->hasFile('passport_photo')) {
+            $lead->passport_photo_path = $request->file('passport_photo')->store('leads/documents/passport-photo', 'public');
+        }
+        if ($request->hasFile('pre_installation_photo')) {
+            $lead->site_photo_pre_installation_path = $request->file('pre_installation_photo')->store('leads/site-photos/pre-installation', 'public');
+        }
+        if ($request->hasFile('post_installation_photo')) {
+            $lead->site_photo_post_installation_path = $request->file('post_installation_photo')->store('leads/site-photos/post-installation', 'public');
+        }
+
+        $lead->last_updated_by = Auth::id();
+        $lead->save();
+
+        return redirect()->route('leads.documents', $lead)->with('success', 'Documents uploaded and Consumer Number saved.');
+    }
 }
